@@ -298,6 +298,12 @@ namespace Exiled.API.Features
         public void Blackout(float duration) => FlickerableLightController?.ServerFlickerLights(duration);
 
         /// <summary>
+        /// Flickers the room's lights off for a duration.
+        /// </summary>
+        /// <param name="duration">Duration in seconds.</param>
+        public void TurnOffLights(float duration) => Blackout(duration);
+
+        /// <summary>
         /// Locks all the doors in the room.
         /// </summary>
         /// <param name="duration">Duration in seconds, or <c>-1</c> for permanent lockdown.</param>
@@ -325,7 +331,7 @@ namespace Exiled.API.Features
         /// <param name="lockType">DoorLockType of the blackout.</param>
         /// <seealso cref="Map.TurnOffAllLights(float, ZoneType)"/>
         /// <seealso cref="Map.TurnOffAllLights(float, IEnumerable{ZoneType})"/>
-        public void BlackDown(float duration, DoorLockType lockType = DoorLockType.Regular079)
+        public void Blackout(float duration, DoorLockType lockType = DoorLockType.Regular079)
         {
             LockDown(duration, lockType);
             Blackout(duration);

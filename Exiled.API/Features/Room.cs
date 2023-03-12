@@ -295,7 +295,7 @@ namespace Exiled.API.Features
         /// Flickers the room's lights off for a duration.
         /// </summary>
         /// <param name="duration">Duration in seconds.</param>
-        public void TurnOffLights(float duration) => Blackout(duration);
+        public void TurnOffLights(float duration) => FlickerableLightController?.ServerFlickerLights(duration);
 
         /// <summary>
         /// Locks all the doors in the room.

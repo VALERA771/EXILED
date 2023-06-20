@@ -73,6 +73,34 @@ namespace Exiled.Events.Patches.Events.Player
                     new(OpCodes.Callvirt, PropertyGetter(typeof(Player), nameof(Player.Role))),
                     new(OpCodes.Callvirt, PropertyGetter(typeof(Role), nameof(Role.Type))),
                     new(OpCodes.Stloc, oldRole.LocalIndex),
+
+                    // loading ev 5 times
+                    new(OpCodes.Ldloc_S, ev.LocalIndex),
+                    new(OpCodes.Dup),
+                    new(OpCodes.Dup),
+                    new(OpCodes.Dup),
+                    new(OpCodes.Dup),
+
+                    // handler = ev.DamageHandler.Base
+                    new(OpCodes.Callvirt, PropertyGetter(typeof(DyingEventArgs), nameof(DyingEventArgs.DamageHandler))),
+                    new(OpCodes.Callvirt, PropertyGetter(typeof(CustomDamageHandler), nameof(CustomDamageHandler.Base))),
+                    new(OpCodes.Starg_S, 1),
+
+                    // if (ev.Player.Items == ev.ItemsToDrop)
+                    //      goto continueLabel
+                    new(OpCodes.Callvirt, PropertyGetter(typeof(DyingEventArgs), nameof(DyingEventArgs.Player))),
+                    new(OpCodes.Callvirt, PropertyGetter(typeof(Player), nameof(Player.Items))),
+                    new(OpCodes.Callvirt, PropertyGetter(typeof(DyingEventArgs), nameof(DyingEventArgs.ItemsToDrop))),
+                    new(OpCodes.Beq_S, continueLabel),
+
+                    // RemoveAllItems(ev.Player)
+                    new(OpCodes.Callvirt, PropertyGetter(typeof(DyingEventArgs), nameof(DyingEventArgs.Player))),
+                    new(OpCodes.Call, Method(typeof(DyingAndDied), nameof(RemoveAllItems))),
+
+                    // ev.Player.AddItem(ev.ItemsToDrop)
+                    new(OpCodes.Callvirt, PropertyGetter(typeof(DyingEventArgs), nameof(DyingEventArgs.ItemsToDrop))),
+                    new(OpCodes.Callvirt, PropertyGetter(typeof(DyingEventArgs), nameof(DyingEventArgs.Player))),
+                    new(OpCodes.Call, Method(typeof(Player), nameof(Player.AddItem), new[] { typeof(IEnumerable<Item>) })),
                 });
 
             newInstructions.InsertRange(
@@ -102,5 +130,7 @@ namespace Exiled.Events.Patches.Events.Player
 
             ListPool<CodeInstruction>.Pool.Return(newInstructions);
         }
+
+        private static void RemoveAllItems(Player player) => player.RemoveItem(_ => true);
     }
 }

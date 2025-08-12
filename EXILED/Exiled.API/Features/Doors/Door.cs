@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="Door.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="Door.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -14,23 +14,18 @@ namespace Exiled.API.Features.Doors
     using Exiled.API.Enums;
     using Exiled.API.Extensions;
     using Exiled.API.Features.Core;
-    using Exiled.API.Features.Hazards;
     using Exiled.API.Interfaces;
-    using global::Hazards;
     using Interactables.Interobjects;
     using Interactables.Interobjects.DoorUtils;
     using MEC;
     using Mirror;
     using UnityEngine;
 
-    using static Interactables.Interobjects.ElevatorManager;
-
     using BaseBreakableDoor = Interactables.Interobjects.BreakableDoor;
-    using BaseKeycardPermissions = Interactables.Interobjects.DoorUtils.KeycardPermissions;
     using Breakable = BreakableDoor;
     using Checkpoint = CheckpointDoor;
     using Elevator = ElevatorDoor;
-    using KeycardPermissions = Enums.KeycardPermissions;
+    using KeycardPermissions = Exiled.API.Enums.KeycardPermissions;
 
     /// <summary>
     /// A wrapper class for <see cref="DoorVariant"/>.
@@ -59,10 +54,8 @@ namespace Exiled.API.Features.Doors
             }
 
             Type = GetDoorType();
-#if Debug
-            if (Type is DoorType.Unknown)
-                Log.Error($"[DOORTYPE UNKNOWN] {this}");
-#endif
+            if (Base != null && Type is DoorType.UnknownDoor or DoorType.UnknownGate or DoorType.UnknownElevator)
+                Log.Error($"[DoorType] Room: {Room?.Type ?? RoomType.Unknown} Name:{Name} GameObjectName:{GameObject.name}");
         }
 
         /// <summary>
@@ -101,7 +94,7 @@ namespace Exiled.API.Features.Doors
         public IReadOnlyCollection<Room> Rooms { get; }
 
         /// <summary>
-        /// Gets a value indicating whether or not the door is fully closed.
+        /// Gets a value indicating whether the door is fully closed.
         /// </summary>
         public virtual bool IsFullyClosed => ExactState is 0;
 
@@ -111,7 +104,7 @@ namespace Exiled.API.Features.Doors
         public virtual bool IsFullyOpen => ExactState is 1;
 
         /// <summary>
-        /// Gets a value indicating whether or not the door is currently moving.
+        /// Gets a value indicating whether the door is currently moving.
         /// </summary>
         public virtual bool IsMoving => !(IsFullyOpen || IsFullyClosed);
 
@@ -135,32 +128,32 @@ namespace Exiled.API.Features.Doors
         }
 
         /// <summary>
-        /// Gets a value indicating whether or not this door is a gate.
+        /// Gets a value indicating whether this door is a gate.
         /// </summary>
         public bool IsGate => this is Gate;
 
         /// <summary>
-        /// Gets a value indicating whether or not this door is a checkpoint door.
+        /// Gets a value indicating whether this door is a checkpoint door.
         /// </summary>
         public bool IsCheckpoint => this is Checkpoint;
 
         /// <summary>
-        /// Gets a value indicating whether or not this door is an elevator door.
+        /// Gets a value indicating whether this door is an elevator door.
         /// </summary>
         public bool IsElevator => this is Elevator;
 
         /// <summary>
-        /// Gets a value indicating whether or not this door can be damaged.
+        /// Gets a value indicating whether this door can be damaged.
         /// </summary>
         public bool IsDamageable => this is Interfaces.IDamageableDoor;
 
         /// <summary>
-        /// Gets a value indicating whether or not this door is non-interactable.
+        /// Gets a value indicating whether this door is non-interactable.
         /// </summary>
         public bool IsNonInteractable => this is Interfaces.INonInteractableDoor;
 
         /// <summary>
-        /// Gets a value indicating whether or not this door is subdoor belonging to a checkpoint.
+        /// Gets a value indicating whether this door is subdoor belonging to a checkpoint.
         /// </summary>
         public bool IsPartOfCheckpoint => ParentCheckpointDoor is not null;
 
@@ -170,7 +163,7 @@ namespace Exiled.API.Features.Doors
         public Checkpoint ParentCheckpointDoor { get; internal set; }
 
         /// <summary>
-        /// Gets a value indicating whether or not this door requires a keycard to open.
+        /// Gets a value indicating whether this door requires a keycard to open.
         /// </summary>
         /// <remarks>
         /// This value is <see langword="false"/> if <see cref="KeycardPermissions"/> is equal to <see cref="KeycardPermissions.None"/>.
@@ -185,8 +178,8 @@ namespace Exiled.API.Features.Doors
         /// </remarks>
         public KeycardPermissions KeycardPermissions
         {
-            get => (KeycardPermissions)RequiredPermissions.RequiredPermissions;
-            set => RequiredPermissions.RequiredPermissions = (BaseKeycardPermissions)value;
+            get => (KeycardPermissions)RequiredPermissions;
+            set => RequiredPermissions = (DoorPermissionFlags)value;
         }
 
         /// <summary>
@@ -204,7 +197,7 @@ namespace Exiled.API.Features.Doors
         }
 
         /// <summary>
-        /// Gets or sets a value indicating whether or not SCP-106 can walk through the door.
+        /// Gets or sets a value indicating whether SCP-106 can walk through the door.
         /// </summary>
         public bool AllowsScp106
         {
@@ -217,7 +210,7 @@ namespace Exiled.API.Features.Doors
         }
 
         /// <summary>
-        /// Gets a value indicating whether or not the door is locked.
+        /// Gets a value indicating whether the door is locked.
         /// </summary>
         public bool IsLocked => DoorLockType > 0;
 
@@ -248,7 +241,25 @@ namespace Exiled.API.Features.Doors
         /// <summary>
         /// Gets or sets the required permissions to open the door.
         /// </summary>
-        public DoorPermissions RequiredPermissions
+        public DoorPermissionFlags RequiredPermissions
+        {
+            get => Base.RequiredPermissions.RequiredPermissions;
+            set => Base.RequiredPermissions.RequiredPermissions = value;
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether all required permissions must be present to open the door.
+        /// </summary>
+        public bool RequireAllPermissions
+        {
+            get => Base.RequiredPermissions.RequireAll;
+            set => Base.RequiredPermissions.RequireAll = value;
+        }
+
+        /// <summary>
+        /// Gets or sets the permissions policy used to determine access to the door.
+        /// </summary>
+        public DoorPermissionsPolicy PermissionsPolicy
         {
             get => Base.RequiredPermissions;
             set => Base.RequiredPermissions = value;
@@ -361,7 +372,7 @@ namespace Exiled.API.Features.Doors
         /// </summary>
         /// <param name="gameObject">The base-game <see cref="UnityEngine.GameObject"/>.</param>
         /// <returns>The <see cref="Door"/> with the given name or <see langword="null"/> if not found.</returns>
-        public static Door Get(GameObject gameObject) => gameObject is null ? null : Get(gameObject.GetComponentInChildren<DoorVariant>());
+        public static Door Get(GameObject gameObject) => gameObject is null ? null : Get(gameObject.GetComponentInParent<DoorVariant>());
 
         /// <summary>
         /// Returns the closest <see cref="Door"/> to the given <paramref name="position"/>.
@@ -478,11 +489,11 @@ namespace Exiled.API.Features.Doors
         {
             switch (Base)
             {
-                case Interactables.Interobjects.BasicDoor basic:
-                    basic.RpcPlayBeepSound(beep is not DoorBeepType.InteractionAllowed);
+                case Interactables.Interobjects.BasicDoor basic when beep is not DoorBeepType.InteractionAllowed:
+                    basic.RpcPlayBeepSound();
                     break;
-                case Interactables.Interobjects.CheckpointDoor chkPt:
-                    chkPt.RpcPlayBeepSound((byte)Mathf.Min((int)beep, 3));
+                case Interactables.Interobjects.CheckpointDoor chkPt when beep is not DoorBeepType.InteractionAllowed:
+                    chkPt.RpcPlayDeniedBeep();
                     break;
             }
         }
@@ -518,8 +529,20 @@ namespace Exiled.API.Features.Doors
         /// <param name="lockType">The <see cref="Enums.DoorLockType"/> of the lockdown.</param>
         public void Lock(float time, DoorLockType lockType)
         {
-            ChangeLock(lockType);
+            Lock(lockType);
             Unlock(time, lockType);
+        }
+
+        /// <summary>
+        /// Locks all active locks on the door for infinite time.
+        /// </summary>
+        /// <param name="lockType">The <see cref="Enums.DoorLockType"/> of the lockdown.</param>
+        public void Lock(DoorLockType lockType)
+        {
+            DoorLockType locks = DoorLockType;
+            locks |= lockType;
+            Base.NetworkActiveLocks = (ushort)locks;
+            DoorEvents.TriggerAction(Base, IsLocked ? DoorAction.Locked : DoorAction.Unlocked, null);
         }
 
         /// <summary>
@@ -545,7 +568,7 @@ namespace Exiled.API.Features.Doors
         /// Returns the Door in a human-readable format.
         /// </summary>
         /// <returns>A string containing Door-related data.</returns>
-        public override string ToString() => $"{Type} ({Zone}) [{Room}] *{DoorLockType}* ={RequiredPermissions.RequiredPermissions}=";
+        public override string ToString() => $"{Type} ({Zone}) [{Room}] *{DoorLockType}* ={KeycardPermissions}=";
 
         /// <summary>
         /// Creates the door object associated with a specific <see cref="DoorVariant"/>.
@@ -576,33 +599,43 @@ namespace Exiled.API.Features.Doors
         {
             if (Nametag is null)
             {
-                string doorName = GameObject.name.GetBefore(' ');
+                string doorName = GameObject.name.GetBefore('(').TrimEnd();
+
                 return doorName switch
                 {
-                    "LCZ" => Room?.Type switch
+                    "LCZ PortallessBreakableDoor" => Room?.Type switch
                     {
-                        RoomType.LczAirlock => (Base.GetComponentInParent<Interactables.Interobjects.AirlockController>() != null) ? DoorType.Airlock : DoorType.LightContainmentDoor,
-                        _ => DoorType.LightContainmentDoor,
+                        RoomType.Hcz106 => DoorType.Scp106Checkpoint,
+                        RoomType.HczTestRoom => DoorType.TestRoom,
+                        RoomType.LczPlants => DoorType.PlantsCloset,
+                        RoomType.LczAirlock => DoorType.Airlock,
+                        RoomType.HczEzCheckpointA or RoomType.HczEzCheckpointB or RoomType.LczCheckpointA or RoomType.LczCheckpointB => DoorType.Checkpoint,
+                        _ => DoorType.UnknownDoor,
                     },
-                    "HCZ" => DoorType.HeavyContainmentDoor,
-                    "EZ" => DoorType.EntranceDoor,
-                    "Prison" => DoorType.PrisonDoor,
-                    "914" => DoorType.Scp914Door,
-                    "Intercom" => Room?.Type switch
+                    "LCZ BreakableDoor" => DoorType.LightContainmentDoor,
+                    "HCZ BreakableDoor" => DoorType.HeavyContainmentDoor,
+                    "HCZ BulkDoor" => DoorType.HeavyBulkDoor,
+                    "EZ BreakableDoor" => DoorType.EntranceDoor,
+                    "Prison BreakableDoor" => DoorType.PrisonDoor,
+                    "914 Door" => DoorType.Scp914Door,
+                    "EZ PortallessBreakableDoor" => DoorType.ServerRoomCloset,
+                    "EZ Keycard BreakableDoor" => Room?.Type switch
                     {
                         RoomType.HczEzCheckpointA => DoorType.CheckpointArmoryA,
                         RoomType.HczEzCheckpointB => DoorType.CheckpointArmoryB,
                         _ => DoorType.UnknownDoor,
                     },
-                    "Unsecured" => Room?.Type switch
+                    "Unsecured Pryable GateDoor" => Room?.Type switch
                     {
-                        RoomType.EzCheckpointHallway => DoorType.CheckpointGate,
-                        RoomType.Hcz049 => Position.y < -805 ? DoorType.Scp049Gate : DoorType.Scp173NewGate,
+                        RoomType.EzCheckpointHallwayA => DoorType.CheckpointGateA,
+                        RoomType.EzCheckpointHallwayB => DoorType.CheckpointGateB,
+                        RoomType.Hcz049 => Position.y < -10 ? DoorType.Scp049Gate : DoorType.Scp173NewGate,
                         _ => DoorType.UnknownGate,
                     },
-                    "Elevator" => (Base as Interactables.Interobjects.ElevatorDoor)?.Group switch
+                    "Cargo Elevator Door" => DoorType.ElevatorServerRoom,
+                    "Nuke Elevator Door" => DoorType.ElevatorNuke,
+                    "Elevator Door" or "Elevator Door 02" or "Elevator Door 01" => (Base as Interactables.Interobjects.ElevatorDoor)?.Group switch
                     {
-                        ElevatorGroup.Nuke => DoorType.ElevatorNuke,
                         ElevatorGroup.Scp049 => DoorType.ElevatorScp049,
                         ElevatorGroup.GateB => DoorType.ElevatorGateB,
                         ElevatorGroup.GateA => DoorType.ElevatorGateA,
@@ -619,17 +652,21 @@ namespace Exiled.API.Features.Doors
                 // Doors contains the DoorNameTagExtension component
                 "CHECKPOINT_LCZ_A" => DoorType.CheckpointLczA,
                 "CHECKPOINT_LCZ_B" => DoorType.CheckpointLczB,
-                "CHECKPOINT_EZ_HCZ_A" => DoorType.CheckpointEzHczA,
+
+                // TODO: Remove when it's fix https://git.scpslgame.com/northwood-qa/scpsl-bug-reporting/-/issues/782
+                "CHECKPOINT_EZ_HCZ_A" => Room?.Type switch
+                {
+                    RoomType.HczEzCheckpointA => DoorType.CheckpointEzHczA,
+                    _ => DoorType.CheckpointEzHczB,
+                },
                 "CHECKPOINT_EZ_HCZ_B" => DoorType.CheckpointEzHczB,
                 "106_PRIMARY" => DoorType.Scp106Primary,
                 "106_SECONDARY" => DoorType.Scp106Secondary,
                 "ESCAPE_PRIMARY" => DoorType.EscapePrimary,
                 "ESCAPE_SECONDARY" => DoorType.EscapeSecondary,
                 "INTERCOM" => DoorType.Intercom,
-                "NUKE_ARMORY" => DoorType.NukeArmory,
                 "LCZ_ARMORY" => DoorType.LczArmory,
                 "SURFACE_NUKE" => DoorType.NukeSurface,
-                "HID" => DoorType.HID,
                 "HCZ_ARMORY" => DoorType.HczArmory,
                 "096" => DoorType.Scp096,
                 "049_ARMORY" => DoorType.Scp049Armory,
@@ -639,11 +676,11 @@ namespace Exiled.API.Features.Doors
                 "079_FIRST" => DoorType.Scp079First,
                 "GATE_B" => DoorType.GateB,
                 "079_SECOND" => DoorType.Scp079Second,
-                "SERVERS_BOTTOM" => DoorType.ServersBottom,
                 "173_CONNECTOR" => DoorType.Scp173Connector,
                 "LCZ_WC" => DoorType.LczWc,
-                "HID_RIGHT" => DoorType.HIDRight,
-                "HID_LEFT" => DoorType.HIDLeft,
+                "HID_CHAMBER" => DoorType.HIDChamber,
+                "HID_LAB" => DoorType.HIDLab,
+                "HCZ_127_LAB" => DoorType.Hcz127Lab,
                 "173_ARMORY" => DoorType.Scp173Armory,
                 "173_GATE" => DoorType.Scp173Gate,
                 "GR18" => DoorType.GR18Gate,
@@ -652,6 +689,7 @@ namespace Exiled.API.Features.Doors
                 "330_CHAMBER" => DoorType.Scp330Chamber,
                 "GR18_INNER" => DoorType.GR18Inner,
                 "939_CRYO" => DoorType.Scp939Cryo,
+                "ESCAPE_FINAL" => DoorType.EscapeFinal,
 
                 // Doors spawned by the DoorSpawnPoint component
                 "LCZ_CAFE" => DoorType.LczCafe,

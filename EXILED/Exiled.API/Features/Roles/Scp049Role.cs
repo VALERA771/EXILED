@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="Scp049Role.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="Scp049Role.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -94,12 +94,12 @@ namespace Exiled.API.Features.Roles
         public Scp049SenseAbility SenseAbility { get; }
 
         /// <summary>
-        /// Gets a value indicating whether or not SCP-049 is currently reviving a player.
+        /// Gets a value indicating whether SCP-049 is currently reviving a player.
         /// </summary>
         public bool IsRecalling => ResurrectAbility.IsInProgress;
 
         /// <summary>
-        /// Gets a value indicating whether or not SCP-049's "Doctor's Call" ability is currently active.
+        /// Gets a value indicating whether SCP-049's "Doctor's Call" ability is currently active.
         /// </summary>
         public bool IsCallActive => CallAbility.IsMarkerShown;
 
@@ -111,46 +111,12 @@ namespace Exiled.API.Features.Roles
         /// <summary>
         /// Gets the ragdoll that is currently being revived by SCP-049. Will be <see langword="null"/> if <see cref="IsRecalling"/> is <see langword="false"/>.
         /// </summary>
-        public Ragdoll RecallingRagdoll => Ragdoll.Get(ResurrectAbility.CurRagdoll);
+        public Ragdoll RecallingRagdoll => Features.Ragdoll.Get(ResurrectAbility.CurRagdoll);
 
         /// <summary>
         /// Gets all the dead zombies.
         /// </summary>
         public IEnumerable<Player> DeadZombies => Scp049ResurrectAbility.DeadZombies.Select(x => Player.Get(x));
-
-        // TODO: ReAdd Setter but before making an propper way to overwrite NW constant only when the propperty has been used
-#pragma warning disable SA1623 // Property summary documentation should match accessors
-#pragma warning disable SA1202
-        /// <summary>
-        /// Gets or sets how mush time the Call Ability will be effective.
-        /// </summary>
-        internal double CallAbilityDuration { get; } = Scp049CallAbility.EffectDuration;
-
-        /// <summary>
-        /// Gets or sets the Cooldown of the Call Ability.
-        /// </summary>
-        internal double CallAbilityBaseCooldown { get; } = Scp049CallAbility.BaseCooldown;
-
-        /// <summary>
-        /// Gets or sets the Cooldown of the Sense Ability.
-        /// </summary>
-        internal double SenseAbilityBaseCooldown { get; } = Scp049SenseAbility.BaseCooldown;
-
-        /// <summary>
-        /// Gets or sets the Cooldown of the Sense Ability when you lost your target.
-        /// </summary>
-        internal double SenseAbilityReducedCooldown { get; } = Scp049SenseAbility.ReducedCooldown;
-
-        /// <summary>
-        /// Gets or sets the Cooldown of the Sense Ability when it's failed.
-        /// </summary>
-        internal double SenseAbilityDuration { get; } = Scp049SenseAbility.EffectDuration;
-
-        /// <summary>
-        /// Gets or sets how mush time the Sense Ability will be effective.
-        /// </summary>
-        internal double SenseAbilityFailCooldown { get; } = Scp049SenseAbility.AttemptFailCooldown;
-#pragma warning restore SA1623 // Property summary documentation should match accessors
 
         /// <summary>
         /// Gets all the resurrected players.
@@ -255,7 +221,7 @@ namespace Exiled.API.Features.Roles
             HumeShieldModuleBase humeShield = ResurrectAbility.CastRole.HumeShieldModule;
             humeShield.HsCurrent = Mathf.Min(humeShield.HsCurrent + 100f, humeShield.HsMax);
 
-            return Resurrect(Ragdoll.GetLast(player));
+            return Resurrect(Features.Ragdoll.GetLast(player));
         }
 
         /// <summary>
@@ -319,7 +285,7 @@ namespace Exiled.API.Features.Roles
 
             if (SenseAbility.Target is null)
             {
-                SenseAbility.Cooldown.Trigger(SenseAbilityFailCooldown);
+                SenseAbility.Cooldown.Trigger(Scp049SenseAbility.AttemptFailCooldown);
                 SenseAbility.ServerSendRpc(true);
                 return;
             }
@@ -332,7 +298,7 @@ namespace Exiled.API.Features.Roles
                 if (!VisionInformation.GetVisionInformation(SenseAbility.Owner, SenseAbility.Owner.PlayerCameraReference, humanRole.CameraPosition, radius, SenseAbility._distanceThreshold).IsLooking)
                     return;
 
-                SenseAbility.Duration.Trigger(SenseAbilityDuration);
+                SenseAbility.Duration.Trigger(Scp049SenseAbility.EffectDuration);
                 SenseAbility.HasTarget = true;
                 SenseAbility.ServerSendRpc(true);
             }
@@ -351,31 +317,31 @@ namespace Exiled.API.Features.Roles
         public int GetResurrectionCount(Player player) => player is not null ? Scp049ResurrectAbility.GetResurrectionsNumber(player.ReferenceHub) : 0;
 
         /// <summary>
-        /// Returns a <see langword="bool"/> indicating whether or not the ragdoll can be resurrected by SCP-049.
+        /// Returns a <see langword="bool"/> indicating whether the ragdoll can be resurrected by SCP-049.
         /// </summary>
         /// <param name="ragdoll">The ragdoll to check.</param>
         /// <returns><see langword="true"/> if the body can be revived; otherwise, <see langword="false"/>.</returns>
         public bool CanResurrect(BasicRagdoll ragdoll) => ragdoll != null && ResurrectAbility.CheckRagdoll(ragdoll);
 
         /// <summary>
-        /// Returns a <see langword="bool"/> indicating whether or not the ragdoll can be resurrected by SCP-049.
+        /// Returns a <see langword="bool"/> indicating whether the ragdoll can be resurrected by SCP-049.
         /// </summary>
         /// <param name="ragdoll">The ragdoll to check.</param>
         /// <returns><see langword="true"/> if the body can be revived; otherwise, <see langword="false"/>.</returns>
         public bool CanResurrect(Ragdoll ragdoll) => ragdoll is not null && ResurrectAbility.CheckRagdoll(ragdoll.Base);
 
         /// <summary>
-        /// Returns a <see langword="bool"/> indicating whether or not SCP-049 is close enough to a ragdoll to revive it.
+        /// Returns a <see langword="bool"/> indicating whether SCP-049 is close enough to a ragdoll to revive it.
         /// </summary>
-        /// <remarks>This method only returns whether or not SCP-049 is close enough to the body to revive it; the body may have expired. Make sure to check <see cref="CanResurrect(BasicRagdoll)"/> to ensure the body can be revived.</remarks>
+        /// <remarks>This method only returns whether SCP-049 is close enough to the body to revive it; the body may have expired. Make sure to check <see cref="CanResurrect(BasicRagdoll)"/> to ensure the body can be revived.</remarks>
         /// <param name="ragdoll">The ragdoll to check.</param>
         /// <returns><see langword="true"/> if close enough to revive the body; otherwise, <see langword="false"/>.</returns>
         public bool IsInRecallRange(BasicRagdoll ragdoll) => ragdoll != null && ResurrectAbility.IsCloseEnough(Owner.Position, ragdoll.transform.position);
 
         /// <summary>
-        /// Returns a <see langword="bool"/> indicating whether or not SCP-049 is close enough to a ragdoll to revive it.
+        /// Returns a <see langword="bool"/> indicating whether SCP-049 is close enough to a ragdoll to revive it.
         /// </summary>
-        /// <remarks>This method only returns whether or not SCP-049 is close enough to the body to revive it; the body may have expired. Make sure to check <see cref="CanResurrect(Ragdoll)"/> to ensure the body can be revived.</remarks>
+        /// <remarks>This method only returns whether SCP-049 is close enough to the body to revive it; the body may have expired. Make sure to check <see cref="CanResurrect(Ragdoll)"/> to ensure the body can be revived.</remarks>
         /// <param name="ragdoll">The ragdoll to check.</param>
         /// <returns><see langword="true"/> if close enough to revive the body; otherwise, <see langword="false"/>.</returns>
         public bool IsInRecallRange(Ragdoll ragdoll) => ragdoll is not null && IsInRecallRange(ragdoll.Base);

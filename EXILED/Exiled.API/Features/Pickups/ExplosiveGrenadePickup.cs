@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="ExplosiveGrenadePickup.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="ExplosiveGrenadePickup.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -96,8 +96,8 @@ namespace Exiled.API.Features.Pickups
             base.InitializeProperties(itemBase);
             if (itemBase is ThrowableItem throwable && throwable.Projectile is ExplosionGrenade explosiveGrenade)
             {
-                MaxRadius = explosiveGrenade._maxRadius;
-                ScpDamageMultiplier = explosiveGrenade._scpDamageMultiplier;
+                MaxRadius = explosiveGrenade.MaxRadius;
+                ScpDamageMultiplier = explosiveGrenade.ScpDamageMultiplier;
                 BurnDuration = explosiveGrenade._burnedDuration;
                 DeafenDuration = explosiveGrenade._deafenedDuration;
                 ConcussDuration = explosiveGrenade._concussedDuration;

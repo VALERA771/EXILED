@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="CameraList.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="CameraList.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -37,10 +37,13 @@ namespace Exiled.Events.Patches.Generic
             LocalBuilder cameraBase = generator.DeclareLocal(typeof(Scp079Camera));
             Label ret = generator.DefineLabel();
 
+            int offset = 1;
+            int index = newInstructions.FindIndex(i => i.Calls(PropertySetter(typeof(Scp079InteractableBase), nameof(Scp079InteractableBase.Room)))) + offset;
+
             // if (this is Scp079Camera camera)
             //     Room.RoomIdentifierToRoom[Room].CamerasValue.Add(new Camera(camera));
             newInstructions.InsertRange(
-                newInstructions.Count - 1,
+                index,
                 new CodeInstruction[]
                 {
                     new(OpCodes.Ldarg_0),

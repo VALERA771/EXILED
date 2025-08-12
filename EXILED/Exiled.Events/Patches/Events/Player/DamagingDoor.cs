@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="DamagingDoor.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="DamagingDoor.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -24,10 +24,9 @@ namespace Exiled.Events.Patches.Events.Player
     using static HarmonyLib.AccessTools;
 
     /// <summary>
-    /// Patch the <see cref="BreakableDoor.ServerDamage(float, DoorDamageType)" />.
-    /// Adds the <see cref="Player.DamagingDoor" /> event.
+    /// Patch the <see cref="BreakableDoor.ServerDamage" />.
+    /// Adds the <see cref="Player.DamagingDoor" /> event and fix https://git.scpslgame.com/northwood-qa/scpsl-bug-reporting/-/issues/817 in the EventArgs.
     /// </summary>
-    [EventPatch(typeof(Player), nameof(Player.DamagingDoor))]
     [HarmonyPatch(typeof(BreakableDoor), nameof(BreakableDoor.ServerDamage))]
     internal static class DamagingDoor
     {

@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="TogglingNoClipEventArgs.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="TogglingNoClipEventArgs.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -19,7 +19,7 @@ namespace Exiled.Events.EventArgs.Player
         /// <summary>
         /// Initializes a new instance of the <see cref="TogglingNoClipEventArgs" /> class.
         /// </summary>
-        /// <param name="player">
+        /// <param name="referenceHub">
         /// <inheritdoc cref="Player" />
         /// </param>
         /// <param name="newValue">
@@ -28,9 +28,9 @@ namespace Exiled.Events.EventArgs.Player
         /// <param name="isAllowed">
         /// <inheritdoc cref="IsAllowed" />
         /// </param>
-        public TogglingNoClipEventArgs(Player player, bool newValue, bool isAllowed = true)
+        public TogglingNoClipEventArgs(ReferenceHub referenceHub, bool newValue, bool isAllowed = true)
         {
-            Player = player;
+            Player = Player.Get(referenceHub);
             IsEnabled = newValue;
             IsAllowed = isAllowed;
         }
@@ -41,12 +41,12 @@ namespace Exiled.Events.EventArgs.Player
         public Player Player { get; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether or not the noclip mode will be enabled or not.
+        /// Gets a value indicating whether the noclip mode will be enabled.
         /// </summary>
-        public bool IsEnabled { get; set; }
+        public bool IsEnabled { get; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether or not the player can toggle noclip.
+        /// Gets or sets a value indicating whether the player can toggle noclip.
         /// </summary>
         public bool IsAllowed { get; set; }
     }

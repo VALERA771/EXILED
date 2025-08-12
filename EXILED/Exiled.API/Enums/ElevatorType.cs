@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="ElevatorType.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="ElevatorType.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -48,5 +48,10 @@ namespace Exiled.API.Enums
         /// Light Containment Zone checkpoint B elevator.
         /// </summary>
         LczB,
+
+        /// <summary>
+        /// Heavy Containment Zone ServerRoom elevator.
+        /// </summary>
+        ServerRoom,
     }
 }

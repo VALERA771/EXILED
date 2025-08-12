@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="Firearm.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="Firearm.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -12,29 +12,24 @@ namespace Exiled.API.Features.Items
     using System.Linq;
 
     using CameraShaking;
-
     using Enums;
 
+    using Exiled.API.Features.Items.FirearmModules;
+    using Exiled.API.Features.Items.FirearmModules.Barrel;
+    using Exiled.API.Features.Items.FirearmModules.Primary;
     using Exiled.API.Features.Pickups;
     using Exiled.API.Interfaces;
     using Exiled.API.Structs;
-
     using Extensions;
-
-    using InventorySystem;
-    using InventorySystem.Items;
-    using InventorySystem.Items.Firearms;
+    using InventorySystem.Items.Autosync;
     using InventorySystem.Items.Firearms.Attachments;
     using InventorySystem.Items.Firearms.Attachments.Components;
-    using InventorySystem.Items.Firearms.BasicMessages;
     using InventorySystem.Items.Firearms.Modules;
-    using InventorySystem.Items.Pickups;
 
-    using UnityEngine;
+    using static InventorySystem.Items.Firearms.Modules.AnimatorReloaderModuleBase;
 
     using BaseFirearm = InventorySystem.Items.Firearms.Firearm;
     using FirearmPickup = Pickups.FirearmPickup;
-    using Object = UnityEngine.Object;
 
     /// <summary>
     /// A wrapper class for <see cref="InventorySystem.Items.Firearms.Firearm"/>.
@@ -59,6 +54,31 @@ namespace Exiled.API.Features.Items
             : base(itemBase)
         {
             Base = itemBase;
+
+            foreach (ModuleBase module in Base.Modules)
+            {
+                switch (module)
+                {
+                    case IPrimaryAmmoContainerModule primaryAmmoModule:
+                        PrimaryMagazine ??= (PrimaryMagazine)Magazine.Get(primaryAmmoModule);
+                        break;
+
+                    case IAmmoContainerModule ammoModule:
+                        BarrelMagazine ??= (BarrelMagazine)Magazine.Get(ammoModule);
+                        break;
+
+                    case HitscanHitregModuleBase hitregModule:
+                        HitscanHitregModule = hitregModule;
+                        break;
+
+                    case AnimatorReloaderModuleBase animatorReloaderModule:
+                        AnimatorReloaderModule = animatorReloaderModule;
+                        break;
+
+                    default:
+                        break;
+                }
+            }
         }
 
         /// <summary>
@@ -68,11 +88,10 @@ namespace Exiled.API.Features.Items
         internal Firearm(ItemType type)
             : this((BaseFirearm)Server.Host.Inventory.CreateItemInstance(new(type, 0), false))
         {
-            FirearmStatusFlags firearmStatusFlags = FirearmStatusFlags.MagazineInserted;
-            if (Base.HasAdvantageFlag(AttachmentDescriptiveAdvantages.Flashlight))
-                firearmStatusFlags |= FirearmStatusFlags.FlashlightEnabled;
+            FlashlightAttachment flashlight = Attachments.OfType<FlashlightAttachment>().FirstOrDefault();
 
-            Base.Status = new FirearmStatus(MaxAmmo, firearmStatusFlags, Base.Status.Attachments);
+            if (flashlight != null && flashlight.IsEnabled)
+                flashlight.ServerSendStatus(true);
         }
 
         /// <inheritdoc cref="BaseCodesValue"/>.
@@ -110,40 +129,154 @@ namespace Exiled.API.Features.Items
         public new BaseFirearm Base { get; }
 
         /// <summary>
-        /// Gets or sets the amount of ammo in the firearm.
+        /// Gets a primaty magazine for current firearm.
         /// </summary>
-        public byte Ammo
+        public PrimaryMagazine PrimaryMagazine { get; }
+
+        /// <summary>
+        /// Gets a barrel magazine for current firearm.
+        /// </summary>
+        /// <remarks>
+        /// <see langword="null"/> for Revolver and ParticleDisruptor.
+        /// </remarks>
+        public BarrelMagazine BarrelMagazine { get; }
+
+        /// <summary>
+        /// Gets a primaty magazine for current firearm.
+        /// </summary>
+        public HitscanHitregModuleBase HitscanHitregModule { get; }
+
+        /// <summary>
+        /// Gets an animator reloader module for the current firearm.
+        /// </summary>
+        public AnimatorReloaderModuleBase AnimatorReloaderModule { get; }
+
+        /// <summary>
+        /// Gets or sets the amount of ammo in the firearm magazine.
+        /// </summary>
+        public int MagazineAmmo
         {
-            get => Base.Status.Ammo;
-            set => Base.Status = new FirearmStatus(value, Base.Status.Flags, Base.Status.Attachments);
+            get => PrimaryMagazine.Ammo;
+            set => PrimaryMagazine.Ammo = value;
         }
+
+        /// <summary>
+        /// Gets or sets the amount of ammo in the firearm barrel.
+        /// </summary>
+        /// <remarks>
+        /// not working for Revolver and ParticleDisruptor.
+        /// </remarks>
+        public int BarrelAmmo
+        {
+            get => BarrelMagazine?.Ammo ?? 0;
+
+            set
+            {
+                if (BarrelMagazine != null)
+                    BarrelMagazine.Ammo = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets the total amount of ammo in the firearm.
+        /// </summary>
+        public int TotalAmmo => Base.GetTotalStoredAmmo();
 
         /// <summary>
         /// Gets or sets the max ammo for this firearm.
         /// </summary>
-        /// <remarks>Disruptor can't be used for MaxAmmo.</remarks>
-        public byte MaxAmmo
+        public int MaxMagazineAmmo
         {
-            get => Base.AmmoManagerModule.MaxAmmo;
+            get => PrimaryMagazine.MaxAmmo;
+            set => PrimaryMagazine.MaxAmmo = value;
+        }
+
+        /// <summary>
+        /// Gets or sets the damage for this firearm.
+        /// </summary>
+        public float Damage
+        {
+            get => HitscanHitregModule.BaseDamage;
+            set => HitscanHitregModule.BaseDamage = value;
+        }
+
+        /// <summary>
+        /// Gets or sets the inaccuracy for this firearm.
+        /// </summary>
+        public float Inaccuracy
+        {
+            get => HitscanHitregModule.BaseBulletInaccuracy;
+            set => HitscanHitregModule.BaseBulletInaccuracy = value;
+        }
+
+        /// <summary>
+        /// Gets or sets the penetration for this firearm.
+        /// </summary>
+        public float Penetration
+        {
+            get => HitscanHitregModule.BasePenetration;
+            set => HitscanHitregModule.BasePenetration = value;
+        }
+
+        /// <summary>
+        /// Gets or sets how much fast the value drop over the distance.
+        /// </summary>
+        public float DamageFalloffDistance
+        {
+            get => HitscanHitregModule.DamageFalloffDistance;
+            set => HitscanHitregModule.DamageFalloffDistance = value;
+        }
+
+        /// <summary>
+        /// Gets the damage for this firearm with attachement modifier.
+        /// </summary>
+        public float EffectiveDamage => HitscanHitregModule.EffectiveDamage;
+
+        /// <summary>
+        /// Gets the inaccuracy for this firearm with attachement modifier.
+        /// </summary>
+        public float EffectiveInaccuracy => HitscanHitregModule.CurrentInaccuracy;
+
+        /// <summary>
+        /// Gets the penetration for this firearm with attachement modifier.
+        /// </summary>
+        public float EffectivePenetration => HitscanHitregModule.DisplayPenetration;
+
+        /// <summary>
+        /// Gets or sets the amount of max ammo in the firearm barrel.
+        /// </summary>
+        /// <remarks>
+        /// not working for Revolver and ParticleDisruptor.
+        /// </remarks>
+        public int MaxBarrelAmmo
+        {
+            get => BarrelMagazine?.MaxAmmo ?? 0;
+
             set
             {
-                switch (Base.AmmoManagerModule)
-                {
-                    case TubularMagazineAmmoManager tubularMagazineAmmoManager:
-                        tubularMagazineAmmoManager.MaxAmmo = (byte)(value - Base.AttachmentsValue(AttachmentParam.MagazineCapacityModifier) - (Base.Status.Flags.HasFlagFast(FirearmStatusFlags.Cocked) ? tubularMagazineAmmoManager.ChamberedRounds : 0));
-                        break;
-                    case ClipLoadedInternalMagAmmoManager clipLoadedInternalMagAmmoManager:
-                        clipLoadedInternalMagAmmoManager.MaxAmmo = (byte)(value - Base.AttachmentsValue(AttachmentParam.MagazineCapacityModifier));
-                        break;
-                    case AutomaticAmmoManager automaticAmmoManager:
-                        automaticAmmoManager.MaxAmmo = (byte)(value - Base.AttachmentsValue(AttachmentParam.MagazineCapacityModifier) - automaticAmmoManager.ChamberedAmount);
-                        break;
-                    default:
-                        Log.Warn($"MaxAmmo can't be used for this Item: {Type} ({Base.AmmoManagerModule})");
-                        return;
-                }
+                if (BarrelMagazine != null)
+                    BarrelMagazine.MaxAmmo = value;
             }
         }
+
+        /// <summary>
+        /// Gets the total amount of ammo in the firearm.
+        /// </summary>
+        public int TotalMaxAmmo => Base.GetTotalMaxAmmo();
+
+        /// <summary>
+        /// Gets or sets a ammo drain per shoot.
+        /// </summary>
+        /// <remarks>
+        /// Always <see langword="1"/> by default.
+        /// Applied on a high layer nether basegame ammo controllers.
+        /// </remarks>
+        public int AmmoDrain { get; set; } = 1;
+
+        /// <summary>
+        /// Gets a value indicating whether the weapon is reloading.
+        /// </summary>
+        public bool IsReloading => Base.TryGetModule(out IReloaderModule module) && module.IsReloading;
 
         /// <summary>
         /// Gets the <see cref="Enums.FirearmType"/> of the firearm.
@@ -153,17 +286,17 @@ namespace Exiled.API.Features.Items
         /// <summary>
         /// Gets the <see cref="Enums.AmmoType"/> of the firearm.
         /// </summary>
-        public AmmoType AmmoType => Base.AmmoType.GetAmmoType();
+        public AmmoType AmmoType => PrimaryMagazine.AmmoType;
 
         /// <summary>
         /// Gets a value indicating whether the firearm is being aimed.
         /// </summary>
-        public bool Aiming => Base.AdsModule.ServerAds;
+        public bool Aiming => Base.TryGetModule(out IAdsModule module) && module.AdsTarget;
 
         /// <summary>
         /// Gets a value indicating whether the firearm's flashlight module is enabled.
         /// </summary>
-        public bool FlashlightEnabled => Base.Status.Flags.HasFlagFast(FirearmStatusFlags.FlashlightEnabled);
+        public bool FlashlightEnabled => Base.IsEmittingLight;
 
         /// <summary>
         /// Gets a value indicating whether the firearm's NightVision is being used.
@@ -176,9 +309,9 @@ namespace Exiled.API.Features.Items
         public bool CanSeeThroughDark => FlashlightEnabled || NightVisionEnabled;
 
         /// <summary>
-        /// Gets a value indicating whether or not the firearm is automatic.
+        /// Gets a value indicating whether the firearm is automatic.
         /// </summary>
-        public bool IsAutomatic => Base is AutomaticFirearm;
+        public bool IsAutomatic => BarrelMagazine is AutomaticBarrelMagazine;
 
         /// <summary>
         /// Gets the <see cref="Attachment"/>s of the firearm.
@@ -203,39 +336,19 @@ namespace Exiled.API.Features.Items
         public uint BaseCode => BaseCodesValue[FirearmType];
 
         /// <summary>
-        /// Gets or sets the fire rate of the firearm, if it is an automatic weapon.
-        /// </summary>
-        /// <remarks>This property will not do anything if the firearm is not an automatic weapon.</remarks>
-        /// <seealso cref="IsAutomatic"/>
-        public float FireRate
-        {
-            get => Base is AutomaticFirearm auto ? auto._fireRate : 1f;
-            set
-            {
-                if (Base is AutomaticFirearm auto)
-                    auto._fireRate = value;
-            }
-        }
-
-        /// <summary>
         /// Gets or sets the recoil settings of the firearm, if it's an automatic weapon.
         /// </summary>
         /// <remarks>This property will not do anything if the firearm is not an automatic weapon.</remarks>
         /// <seealso cref="IsAutomatic"/>
         public RecoilSettings Recoil
         {
-            get => Base is AutomaticFirearm auto ? auto._recoil : default;
+            get => Base.TryGetModule(out RecoilPatternModule module) ? module.BaseRecoil : default;
             set
             {
-                if (Base is AutomaticFirearm auto)
-                    auto.ActionModule = new AutomaticAction(Base, auto._semiAutomatic, auto._boltTravelTime, 1f / auto._fireRate, auto._dryfireClipId, auto._triggerClipId, auto._gunshotPitchRandomization, value, auto._recoilPattern, false, Mathf.Max(1, auto._chamberSize));
+                if (Base.TryGetModule(out RecoilPatternModule module))
+                    module.BaseRecoil = value;
             }
         }
-
-        /// <summary>
-        /// Gets the firearm's <see cref="FirearmRecoilPattern"/>. Will be <see langword="null"/> for non-automatic weapons.
-        /// </summary>
-        public FirearmRecoilPattern RecoilPattern => Base is AutomaticFirearm auto ? auto._recoilPattern : null;
 
         /// <summary>
         /// Gets a <see cref="Dictionary{TKey, TValue}"/> of <see cref="ItemType"/> and <see cref="AttachmentIdentifier"/>[] which contains all available attachments for all firearms.
@@ -256,28 +369,29 @@ namespace Exiled.API.Features.Items
         /// <param name="identifier">The <see cref="AttachmentIdentifier"/> to add.</param>
         public void AddAttachment(AttachmentIdentifier identifier)
         {
-            uint toRemove = 0;
-            uint code = 1;
+            // Fallback addedCode onto AvailableAttachments' code in case it's 0
+            uint addedCode = identifier.Code == 0
+                ? AvailableAttachments[FirearmType].FirstOrDefault(attId => attId.Name == identifier.Name).Code
+                : identifier.Code;
+
+            // Look for conflicting attachment (attachment that occupies the same slot)
+            uint conflicting = 0;
+            uint current = 1;
 
             foreach (Attachment attachment in Base.Attachments)
             {
                 if (attachment.Slot == identifier.Slot && attachment.IsEnabled)
                 {
-                    toRemove = code;
+                    conflicting = current;
                     break;
                 }
 
-                code *= 2;
+                current *= 2;
             }
 
-            uint newCode = identifier.Code == 0
-                ? AvailableAttachments[FirearmType].FirstOrDefault(
-                    attId =>
-                        attId.Name == identifier.Name).Code
-                : identifier.Code;
-
-            Base.ApplyAttachmentsCode((Base.GetCurrentAttachmentsCode() & ~toRemove) | newCode, true);
-            Base.Status = new FirearmStatus(Math.Min(Ammo, MaxAmmo), Base.Status.Flags, Base.GetCurrentAttachmentsCode());
+            uint code = Base.ValidateAttachmentsCode((Base.GetCurrentAttachmentsCode() & ~conflicting) | addedCode);
+            Base.ApplyAttachmentsCode(code, false);
+            AttachmentCodeSync.ServerSetCode(Serial, code);
         }
 
         /// <summary>
@@ -319,10 +433,12 @@ namespace Exiled.API.Features.Items
 
             Base.ApplyAttachmentsCode(Base.GetCurrentAttachmentsCode() & ~code, true);
 
+            // TODO: Not finish
+            /*
             if (identifier.Name == AttachmentName.Flashlight)
                 Base.Status = new FirearmStatus(Math.Min(Ammo, MaxAmmo), Base.Status.Flags & ~FirearmStatusFlags.FlashlightEnabled, Base.GetCurrentAttachmentsCode());
             else
-                Base.Status = new FirearmStatus(Math.Min(Ammo, MaxAmmo), Base.Status.Flags, Base.GetCurrentAttachmentsCode());
+                Base.Status = new FirearmStatus(Math.Min(Ammo, MaxAmmo), Base.Status.Flags, Base.GetCurrentAttachmentsCode());*/
         }
 
         /// <summary>
@@ -335,10 +451,12 @@ namespace Exiled.API.Features.Items
 
             Base.ApplyAttachmentsCode(Base.GetCurrentAttachmentsCode() & ~code, true);
 
+            // TODO Not finish
+            /*
             if (attachmentName == AttachmentName.Flashlight)
                 Base.Status = new FirearmStatus(Math.Min(Ammo, MaxAmmo), Base.Status.Flags & ~FirearmStatusFlags.FlashlightEnabled, Base.GetCurrentAttachmentsCode());
             else
-                Base.Status = new FirearmStatus(Math.Min(Ammo, MaxAmmo), Base.Status.Flags, Base.GetCurrentAttachmentsCode());
+                Base.Status = new FirearmStatus(Math.Min(Ammo, MaxAmmo), Base.Status.Flags, Base.GetCurrentAttachmentsCode());*/
         }
 
         /// <summary>
@@ -356,10 +474,12 @@ namespace Exiled.API.Features.Items
 
             Base.ApplyAttachmentsCode(Base.GetCurrentAttachmentsCode() & ~code, true);
 
+            // TODO Not finish
+            /*
             if (firearmAttachment.Name == AttachmentName.Flashlight)
                 Base.Status = new FirearmStatus(Math.Min(Ammo, MaxAmmo), Base.Status.Flags & ~FirearmStatusFlags.FlashlightEnabled, Base.GetCurrentAttachmentsCode());
             else
-                Base.Status = new FirearmStatus(Math.Min(Ammo, MaxAmmo), Base.Status.Flags, Base.GetCurrentAttachmentsCode());
+                Base.Status = new FirearmStatus(Math.Min(Ammo, MaxAmmo), Base.Status.Flags, Base.GetCurrentAttachmentsCode());*/
         }
 
         /// <summary>
@@ -398,16 +518,6 @@ namespace Exiled.API.Features.Items
         public void ClearAttachments() => Base.ApplyAttachmentsCode(BaseCode, true);
 
         /// <summary>
-        /// Creates the <see cref="Pickup"/> that based on this <see cref="Item"/>.
-        /// </summary>
-        /// <param name="position">The location to spawn the item.</param>
-        /// <param name="rotation">The rotation of the item.</param>
-        /// <param name="spawn">Whether the <see cref="Pickup"/> should be initially spawned.</param>
-        /// <returns>The created <see cref="Pickup"/>.</returns>
-        public override Pickup CreatePickup(Vector3 position, Quaternion rotation = default, bool spawn = true)
-            => base.CreatePickup(position, rotation, spawn); // TODO: Deleted this overide
-
-        /// <summary>
         /// Gets a <see cref="Attachment"/> of the specified <see cref="AttachmentIdentifier"/>.
         /// </summary>
         /// <param name="identifier">The <see cref="AttachmentIdentifier"/> to check.</param>
@@ -419,7 +529,7 @@ namespace Exiled.API.Features.Items
         /// </summary>
         /// <param name="identifier">The <see cref="AttachmentIdentifier"/> to check.</param>
         /// <param name="firearmAttachment">The corresponding <see cref="Attachment"/>.</param>
-        /// <returns>A value indicating whether or not the firearm has the specified <see cref="Attachment"/>.</returns>
+        /// <returns>A value indicating whether the firearm has the specified <see cref="Attachment"/>.</returns>
         public bool TryGetAttachment(AttachmentIdentifier identifier, out Attachment firearmAttachment)
         {
             firearmAttachment = default;
@@ -437,7 +547,7 @@ namespace Exiled.API.Features.Items
         /// </summary>
         /// <param name="attachmentName">The <see cref="AttachmentName"/> to check.</param>
         /// <param name="firearmAttachment">The corresponding <see cref="Attachment"/>.</param>
-        /// <returns>A value indicating whether or not the firearm has the specified <see cref="Attachment"/>.</returns>
+        /// <returns>A value indicating whether the firearm has the specified <see cref="Attachment"/>.</returns>
         public bool TryGetAttachment(AttachmentName attachmentName, out Attachment firearmAttachment)
         {
             firearmAttachment = default;
@@ -603,6 +713,60 @@ namespace Exiled.API.Features.Items
         }
 
         /// <summary>
+        /// Reloads current <see cref="Firearm"/>.
+        /// </summary>
+        /// <remarks>
+        /// For specific reloading logic you also can use <see cref="NormalMagazine"/> for avaible weapons.
+        /// </remarks>
+        public void Reload()
+        {
+            if (AnimatorReloaderModule == null)
+                return;
+
+            AnimatorReloaderModule.IsReloading = true;
+            AnimatorReloaderModule.SendRpcHeaderWithRandomByte(ReloaderMessageHeader.Reload);
+        }
+
+        /// <summary>
+        /// Attempts to reload the firearm with server-side validation.
+        /// </summary>
+        /// <returns><see langword="true"/> if the firearm was successfully reloaded. Otherwise, <see langword="false"/>.</returns>
+        public bool TryReload()
+        {
+            if (AnimatorReloaderModule == null)
+                return false;
+
+            return AnimatorReloaderModule.ServerTryReload();
+        }
+
+        /// <summary>
+        /// Attempts to unload the firearm with server-side validation.
+        /// </summary>
+        /// <returns><see langword="true"/> if the firearm was successfully unload. Otherwise, <see langword="false"/>.</returns>
+        public bool TryUnload()
+        {
+            if (AnimatorReloaderModule == null)
+                return false;
+
+            return AnimatorReloaderModule.ServerTryUnload();
+        }
+
+        /// <summary>
+        /// Forces the firearm's client-side unload animation, bypassing server-side checks.
+        /// </summary>
+        /// <remarks>
+        /// This only plays the animation and is not guaranteed to result in a successful unload. For server-validated unloading, use <see cref="Unload"/>.
+        /// </remarks>
+        public void Unload()
+        {
+            if (AnimatorReloaderModule == null)
+                return;
+
+            AnimatorReloaderModule.IsUnloading = true;
+            AnimatorReloaderModule.SendRpcHeaderWithRandomByte(ReloaderMessageHeader.Unload);
+        }
+
+        /// <summary>
         /// Clones current <see cref="Firearm"/> object.
         /// </summary>
         /// <returns> New <see cref="Firearm"/> object. </returns>
@@ -610,14 +774,15 @@ namespace Exiled.API.Features.Items
         {
             Firearm cloneableItem = new(Type)
             {
-                Ammo = Ammo,
             };
 
+            // TODO Not finish
+            /*
             if (cloneableItem.Base is AutomaticFirearm)
             {
                 cloneableItem.FireRate = FireRate;
                 cloneableItem.Recoil = Recoil;
-            }
+            }*/
 
             cloneableItem.AddAttachment(AttachmentIdentifiers);
 
@@ -631,23 +796,25 @@ namespace Exiled.API.Features.Items
         /// <param name="newOwner">new <see cref="Firearm"/> owner.</param>
         internal override void ChangeOwner(Player oldOwner, Player newOwner)
         {
+            Base.InstantiationStatus = newOwner == Server.Host ? AutosyncInstantiationStatus.SimulatedInstance : AutosyncInstantiationStatus.InventoryInstance;
             Base.Owner = newOwner.ReferenceHub;
-
-            Base.HitregModule = Base switch
+            Base._footprintCacheSet = false;
+            foreach (ModuleBase module in Base.Modules)
             {
-                AutomaticFirearm automaticFirearm =>
-                    new SingleBulletHitreg(automaticFirearm, automaticFirearm.Owner, automaticFirearm._recoilPattern),
-                Shotgun shotgun =>
-                    new BuckshotHitreg(shotgun, shotgun.Owner, shotgun.GetBuckshotPattern),
-                ParticleDisruptor particleDisruptor =>
-                    new DisruptorHitreg(particleDisruptor, particleDisruptor.Owner, particleDisruptor._explosionSettings),
-                Revolver revolver =>
-                    new SingleBulletHitreg(revolver, revolver.Owner),
-                _ => throw new NotImplementedException("Should never happend"),
-            };
+                module.OnAdded();
+            }
+        }
 
-            Base._sendStatusNextFrame = true;
-            Base._footprintValid = false;
+        /// <inheritdoc/>
+        internal override void ReadPickupInfoBefore(Pickup pickup)
+        {
+            base.ReadPickupInfoBefore(pickup);
+
+            if (pickup is FirearmPickup firearmPickup)
+            {
+                PrimaryMagazine.MaxAmmo = firearmPickup.MaxAmmo;
+                AmmoDrain = firearmPickup.AmmoDrain;
+            }
         }
     }
 }

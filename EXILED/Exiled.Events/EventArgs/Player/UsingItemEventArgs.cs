@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="UsingItemEventArgs.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="UsingItemEventArgs.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -21,16 +21,18 @@ namespace Exiled.Events.EventArgs.Player
         /// <summary>
         /// Initializes a new instance of the <see cref="UsingItemEventArgs" /> class.
         /// </summary>
-        /// <param name="player">The player who's going to use the item.</param>
+        /// <param name="hub">
+        /// <inheritdoc cref="Player" />
+        /// </param>
         /// <param name="cooldown">
         /// <inheritdoc cref="Cooldown" />
         /// </param>
         /// <param name="item">
         /// <inheritdoc cref="UsedItemEventArgs.Item" />
         /// </param>
-        public UsingItemEventArgs(Player player, UsableItem item, float cooldown)
+        public UsingItemEventArgs(ReferenceHub hub, UsableItem item, float cooldown)
         {
-            Player = player;
+            Player = Player.Get(hub);
             Usable = Item.Get(item) is Usable usable ? usable : null;
             Cooldown = cooldown;
         }
@@ -54,7 +56,7 @@ namespace Exiled.Events.EventArgs.Player
         public float Cooldown { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether or not the player can use the item.
+        /// Gets or sets a value indicating whether the player can use the item.
         /// </summary>
         public bool IsAllowed { get; set; } = true;
     }

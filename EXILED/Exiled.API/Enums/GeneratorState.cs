@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="GeneratorState.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="GeneratorState.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -20,9 +20,9 @@ namespace Exiled.API.Enums
     public enum GeneratorState : byte
     {
         /// <summary>
-        /// Generator is locked.
+        /// Generator is doing nothing.
         /// </summary>
-        None = 1,
+        None = 0,
 
         /// <summary>
         /// Generator is unlocked.

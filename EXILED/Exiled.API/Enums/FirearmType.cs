@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="FirearmType.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="FirearmType.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -89,5 +89,10 @@ namespace Exiled.API.Enums
         /// Represents the <see cref="ItemType.GunA7"/>.
         /// </summary>
         A7,
+
+        /// <summary>
+        /// Represents the <see cref="ItemType.GunSCP127"/>.
+        /// </summary>
+        Scp127,
     }
 }

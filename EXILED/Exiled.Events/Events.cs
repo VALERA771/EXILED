@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="Events.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="Events.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -13,16 +13,17 @@ namespace Exiled.Events
     using API.Enums;
     using API.Features;
     using CentralAuth;
+    using Exiled.API.Features.Core.UserSettings;
     using Exiled.Events.Features;
     using HarmonyLib;
     using InventorySystem.Items.Pickups;
     using InventorySystem.Items.Usables;
-
     using PlayerRoles.Ragdolls;
     using PlayerRoles.RoleAssign;
-    using PluginAPI.Events;
+
     using Respawning;
     using UnityEngine.SceneManagement;
+    using UserSettings.ServerSpecific;
 
     /// <summary>
     /// Patch and unpatch events into the game.
@@ -59,19 +60,22 @@ namespace Exiled.Events
             Log.Info($"{(Config.UseDynamicPatching ? "Non-event" : "All")} patches completed in {watch.Elapsed}");
             PlayerAuthenticationManager.OnInstanceModeChanged -= RoleAssigner.CheckLateJoin;
 
+            CustomNetworkManager.OnClientStarted += Handlers.Internal.ClientStarted.OnClientStarted;
             SceneManager.sceneUnloaded += Handlers.Internal.SceneUnloaded.OnSceneUnloaded;
-            MapGeneration.SeedSynchronizer.OnMapGenerated += Handlers.Internal.MapGenerated.OnMapGenerated;
+            MapGeneration.SeedSynchronizer.OnGenerationFinished += Handlers.Internal.MapGenerated.OnMapGenerated;
             UsableItemsController.ServerOnUsingCompleted += Handlers.Internal.Round.OnServerOnUsingCompleted;
             Handlers.Server.WaitingForPlayers += Handlers.Internal.Round.OnWaitingForPlayers;
             Handlers.Server.RestartingRound += Handlers.Internal.Round.OnRestartingRound;
             Handlers.Server.RoundStarted += Handlers.Internal.Round.OnRoundStarted;
             Handlers.Player.ChangingRole += Handlers.Internal.Round.OnChangingRole;
+            Handlers.Player.SpawningRagdoll += Handlers.Internal.Round.OnSpawningRagdoll;
             Handlers.Scp049.ActivatingSense += Handlers.Internal.Round.OnActivatingSense;
             Handlers.Player.Verified += Handlers.Internal.Round.OnVerified;
             Handlers.Map.ChangedIntoGrenade += Handlers.Internal.ExplodingGrenade.OnChangedIntoGrenade;
 
+            RoleAssigner.OnPlayersSpawned += Handlers.Server.OnAllPlayersSpawned;
             CharacterClassManager.OnRoundStarted += Handlers.Server.OnRoundStarted;
-            RespawnManager.ServerOnRespawned += Handlers.Server.OnRespawnedTeam;
+            WaveManager.OnWaveSpawned += Handlers.Server.OnRespawnedTeam;
             InventorySystem.InventoryExtensions.OnItemAdded += Handlers.Player.OnItemAdded;
             InventorySystem.InventoryExtensions.OnItemRemoved += Handlers.Player.OnItemRemoved;
 
@@ -79,9 +83,13 @@ namespace Exiled.Events
             RagdollManager.OnRagdollRemoved += Handlers.Internal.RagdollList.OnRemovedRagdoll;
             ItemPickupBase.OnPickupAdded += Handlers.Internal.PickupEvent.OnSpawnedPickup;
             ItemPickupBase.OnPickupDestroyed += Handlers.Internal.PickupEvent.OnRemovedPickup;
-            ServerConsole.ReloadServerName();
 
-            EventManager.RegisterEvents<Handlers.Player>(this);
+            AdminToys.AdminToyBase.OnAdded += Handlers.Internal.AdminToyList.OnAddedAdminToys;
+            AdminToys.AdminToyBase.OnRemoved += Handlers.Internal.AdminToyList.OnRemovedAdminToys;
+
+            ServerSpecificSettingsSync.ServerOnSettingValueReceived += SettingBase.OnSettingUpdated;
+
+            ServerConsole.ReloadServerName();
         }
 
         /// <inheritdoc/>
@@ -91,28 +99,30 @@ namespace Exiled.Events
 
             Unpatch();
 
+            CustomNetworkManager.OnClientStarted -= Handlers.Internal.ClientStarted.OnClientStarted;
             SceneManager.sceneUnloaded -= Handlers.Internal.SceneUnloaded.OnSceneUnloaded;
-            MapGeneration.SeedSynchronizer.OnMapGenerated -= Handlers.Internal.MapGenerated.OnMapGenerated;
+            MapGeneration.SeedSynchronizer.OnGenerationFinished -= Handlers.Internal.MapGenerated.OnMapGenerated;
             UsableItemsController.ServerOnUsingCompleted -= Handlers.Internal.Round.OnServerOnUsingCompleted;
             Handlers.Server.WaitingForPlayers -= Handlers.Internal.Round.OnWaitingForPlayers;
             Handlers.Server.RestartingRound -= Handlers.Internal.Round.OnRestartingRound;
             Handlers.Server.RoundStarted -= Handlers.Internal.Round.OnRoundStarted;
             Handlers.Player.ChangingRole -= Handlers.Internal.Round.OnChangingRole;
+            Handlers.Player.SpawningRagdoll -= Handlers.Internal.Round.OnSpawningRagdoll;
             Handlers.Scp049.ActivatingSense -= Handlers.Internal.Round.OnActivatingSense;
             Handlers.Player.Verified -= Handlers.Internal.Round.OnVerified;
             Handlers.Map.ChangedIntoGrenade -= Handlers.Internal.ExplodingGrenade.OnChangedIntoGrenade;
 
             CharacterClassManager.OnRoundStarted -= Handlers.Server.OnRoundStarted;
-
+            RoleAssigner.OnPlayersSpawned -= Handlers.Server.OnAllPlayersSpawned;
             InventorySystem.InventoryExtensions.OnItemAdded -= Handlers.Player.OnItemAdded;
             InventorySystem.InventoryExtensions.OnItemRemoved -= Handlers.Player.OnItemRemoved;
-            RespawnManager.ServerOnRespawned -= Handlers.Server.OnRespawnedTeam;
+            WaveManager.OnWaveSpawned -= Handlers.Server.OnRespawnedTeam;
             RagdollManager.OnRagdollSpawned -= Handlers.Internal.RagdollList.OnSpawnedRagdoll;
             RagdollManager.OnRagdollRemoved -= Handlers.Internal.RagdollList.OnRemovedRagdoll;
             ItemPickupBase.OnPickupAdded -= Handlers.Internal.PickupEvent.OnSpawnedPickup;
             ItemPickupBase.OnPickupDestroyed -= Handlers.Internal.PickupEvent.OnRemovedPickup;
 
-            EventManager.UnregisterEvents<Handlers.Player>(this);
+            ServerSpecificSettingsSync.ServerOnSettingValueReceived -= SettingBase.OnSettingUpdated;
         }
 
         /// <summary>

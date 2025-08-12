@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="Throwable.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="Throwable.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -91,6 +91,11 @@ namespace Exiled.API.Features.Items
 
             Base.ServerThrow(settings.StartVelocity, settings.UpwardsFactor, settings.StartTorque, ThrowableNetworkHandler.GetLimitedVelocity(Owner?.Velocity ?? Vector3.one));
         }
+
+        /// <summary>
+        /// Cancel the the throws of the item.
+        /// </summary>
+        public void CancelThrow() => Base.ServerProcessCancellation();
 
         /// <summary>
         /// Clones current <see cref="Throwable"/> object.

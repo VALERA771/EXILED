@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="LockerList.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="LockerList.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -12,7 +12,7 @@ namespace Exiled.Events.Patches.Generic
 
     using API.Features;
     using API.Features.Pools;
-
+    using Exiled.API.Features.Lockers;
     using HarmonyLib;
 
     using MapGeneration.Distributors;
@@ -20,23 +20,28 @@ namespace Exiled.Events.Patches.Generic
     using static HarmonyLib.AccessTools;
 
     /// <summary>
-    /// Patches <see cref="Locker.Start"/>.
+    /// Patches <see cref="SpawnableStructure.Start"/>.
     /// </summary>
-    [HarmonyPatch(typeof(Locker), nameof(Locker.Start))]
+    [HarmonyPatch(typeof(SpawnableStructure), nameof(SpawnableStructure.Start))]
     internal class LockerList
     {
-        private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator generator)
         {
             List<CodeInstruction> newInstructions = ListPool<CodeInstruction>.Pool.Get(codeInstructions);
 
-            // Map.LockersValue.Add(this);
+            Label jump = generator.DefineLabel();
+
+            // new Locker(this)
             newInstructions.InsertRange(
                 0,
                 new CodeInstruction[]
                 {
-                    new(OpCodes.Ldsfld, Field(typeof(Map), nameof(Map.LockersValue))),
                     new(OpCodes.Ldarg_0),
-                    new(OpCodes.Callvirt, Method(typeof(List<Locker>), nameof(List<Locker>.Add), new[] { typeof(Locker) })),
+                    new(OpCodes.Isinst, typeof(MapGeneration.Distributors.Locker)),
+                    new(OpCodes.Dup),
+                    new(OpCodes.Brfalse_S, jump),
+                    new(OpCodes.Newobj, GetDeclaredConstructors(typeof(API.Features.Lockers.Locker))[0]),
+                    new CodeInstruction(OpCodes.Pop).WithLabels(jump),
                 });
 
             for (int z = 0; z < newInstructions.Count; z++)

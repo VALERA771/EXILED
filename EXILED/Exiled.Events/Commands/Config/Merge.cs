@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="Merge.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="Merge.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -20,6 +20,7 @@ namespace Exiled.Events.Commands.Config
     /// <summary>
     /// The config merge command.
     /// </summary>
+    [CommandHandler(typeof(EConfig))]
     public class Merge : ICommand
     {
         /// <summary>
@@ -48,8 +49,8 @@ namespace Exiled.Events.Commands.Config
             SortedDictionary<string, IConfig> configs = ConfigManager.LoadSorted(ConfigManager.Read());
             LoaderPlugin.Config.ConfigType = ConfigType.Default;
             bool haveBeenSaved = ConfigManager.Save(configs);
-            PluginAPI.Loader.AssemblyLoader.InstalledPlugins.FirstOrDefault(x => x.PluginName == "Exiled Loader")?.SaveConfig(new LoaderPlugin(), nameof(LoaderPlugin.Config));
 
+            LoaderPlugin.Instance.SaveConfig();
             response = $"Configs have been merged successfully! Feel free to remove the directory in the following path:\n\"{Paths.IndividualConfigs}\"";
             return haveBeenSaved;
         }

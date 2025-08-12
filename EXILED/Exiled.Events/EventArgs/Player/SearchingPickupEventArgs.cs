@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="SearchingPickupEventArgs.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="SearchingPickupEventArgs.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -37,7 +37,7 @@ namespace Exiled.Events.EventArgs.Player
         /// <param name="searchTime">
         /// <inheritdoc cref="SearchTime" />
         /// </param>
-        public SearchingPickupEventArgs(Player player, ItemPickupBase pickup, SearchSession searchSession, SearchCompletor searchCompletor, float searchTime)
+        public SearchingPickupEventArgs(Player player, ItemPickupBase pickup, SearchSession searchSession, PickupSearchCompletor searchCompletor, float searchTime)
         {
             Player = player;
             Pickup = Pickup.Get(pickup);
@@ -54,7 +54,7 @@ namespace Exiled.Events.EventArgs.Player
         /// <summary>
         /// Gets or sets the SearchCompletor.
         /// </summary>
-        public SearchCompletor SearchCompletor { get; set; }
+        public PickupSearchCompletor SearchCompletor { get; set; }
 
         /// <summary>
         /// Gets or sets the Pickup search duration.

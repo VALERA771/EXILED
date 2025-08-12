@@ -1,19 +1,17 @@
 // -----------------------------------------------------------------------
-// <copyright file="Keycard.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="Keycard.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
 
 namespace Exiled.API.Features.Items
 {
+    using System;
+
     using Exiled.API.Enums;
-    using Exiled.API.Features.Pickups;
     using Exiled.API.Interfaces;
-
     using InventorySystem.Items.Keycards;
-
-    using KeycardPickup = Pickups.KeycardPickup;
 
     /// <summary>
     /// A wrapper class for <see cref="KeycardItem"/>.
@@ -49,33 +47,30 @@ namespace Exiled.API.Features.Items
         /// </summary>
         public KeycardPermissions Permissions
         {
-            get => (KeycardPermissions)Base.Permissions;
-            set => Base.Permissions = (Interactables.Interobjects.DoorUtils.KeycardPermissions)value;
-        }
+            get
+            {
+                foreach (DetailBase detail in Base.Details)
+                {
+                    switch (detail)
+                    {
+                        case PredefinedPermsDetail predefinedPermsDetail:
+                            return (KeycardPermissions)predefinedPermsDetail.Levels.Permissions;
+                        case CustomPermsDetail customPermsDetail:
+                            return (KeycardPermissions)customPermsDetail.GetPermissions(null);
+                    }
+                }
 
-        /// <summary>
-        /// Clones current <see cref="Keycard"/> object.
-        /// </summary>
-        /// <returns> New <see cref="Keycard"/> object. </returns>
-        public override Item Clone() => new Keycard(Type)
-        {
-            Permissions = Permissions,
-        };
+                return KeycardPermissions.None;
+            }
+
+            [Obsolete("Not functional anymore", true)]
+            set => _ = value;
+        }
 
         /// <summary>
         /// Returns the Keycard in a human readable format.
         /// </summary>
         /// <returns>A string containing Keycard-related data.</returns>
         public override string ToString() => $"{Type} ({Serial}) [{Weight}] *{Scale}* |{Permissions}|";
-
-        /// <inheritdoc/>
-        internal override void ReadPickupInfo(Pickup pickup)
-        {
-            base.ReadPickupInfo(pickup);
-            if (pickup is KeycardPickup keycardPickup)
-            {
-                Permissions = keycardPickup.Permissions;
-            }
-        }
     }
 }

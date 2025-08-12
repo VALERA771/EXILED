@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="Paths.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="Paths.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -10,6 +10,8 @@ namespace Exiled.API.Features
     using System;
     using System.IO;
     using System.Linq;
+
+    using LabApi.Loader;
 
     /// <summary>
     /// A set of useful paths.
@@ -106,7 +108,7 @@ namespace Exiled.API.Features
             Dependencies = Path.Combine(Plugins, "dependencies");
             Configs = Path.Combine(Exiled, "Configs");
             IndividualConfigs = Path.Combine(Configs, "Plugins");
-            LoaderConfig = PluginAPI.Loader.AssemblyLoader.InstalledPlugins.FirstOrDefault(x => x.PluginName == "Exiled Loader")?.MainConfigPath;
+            LoaderConfig = LabApi.Loader.PluginLoader.EnabledPlugins.FirstOrDefault(x => x.Name == "Exiled Loader")?.GetConfigPath("Exiled Loader");
             Config = Path.Combine(Configs, $"{Server.Port}-config.yml");
             BackupConfig = Path.Combine(Configs, $"{Server.Port}-config.yml.old");
             IndividualTranslations = Path.Combine(Configs, "Translations");

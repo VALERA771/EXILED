@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="DamageType.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="DamageType.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -15,8 +15,7 @@ namespace Exiled.API.Enums
     /// Identifiers for types of damage.
     /// </summary>
     /// <seealso cref="Player.Hurt(float, DamageType, string)"/>
-    /// <seealso cref="Player.Hurt(Player, float, DamageType, Features.DamageHandlers.DamageHandlerBase.CassieAnnouncement)"/>
-    /// <seealso cref="Player.Hurt(Player, float, DamageType, Features.DamageHandlers.DamageHandlerBase.CassieAnnouncement, string)"/>
+    /// <seealso cref="Player.Hurt(Player, float, DamageType, Features.DamageHandlers.DamageHandlerBase.CassieAnnouncement, string, bool)"/>
     /// <seealso cref="Player.Kill(DamageType, string)"/>
     public enum DamageType
     {
@@ -119,6 +118,11 @@ namespace Exiled.API.Enums
         /// Damage caused by severed hands.
         /// </summary>
         SeveredHands,
+
+        /// <summary>
+        /// Damage caused by severed eyes.
+        /// </summary>
+        SeveredEyes,
 
         /// <summary>
         /// Damage caused by a custom source.
@@ -249,5 +253,25 @@ namespace Exiled.API.Enums
         /// Damage caused by the marshmallow man.
         /// </summary>
         Marshmallow,
+
+        /// <summary>
+        /// Damage caused by <see cref="RoleTypeId.Flamingo"/> ,<see cref="RoleTypeId.AlphaFlamingo"/> or <see cref="RoleTypeId.ZombieFlamingo"/>.
+        /// </summary>
+        Scp1507,
+
+        /// <summary>
+        /// Damage caused by Scp956 the pinata.
+        /// </summary>
+        Scp956,
+
+        /// <summary>
+        /// Damage caused by <see cref="ItemType.Snowball"/>.
+        /// </summary>
+        SnowBall,
+
+        /// <summary>
+        /// Damage caused by <see cref="ItemType.GunSCP127"/>.
+        /// </summary>
+        Scp127,
     }
 }

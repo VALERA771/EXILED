@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="ChangingRadioPreset.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="ChangingRadioPreset.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -21,6 +21,8 @@ namespace Exiled.Events.Patches.Events.Player
     using InventorySystem.Items;
     using InventorySystem.Items.Radio;
 
+    using LabApi.Events.Arguments.PlayerEvents;
+
     using static HarmonyLib.AccessTools;
 
     /// <summary>
@@ -40,7 +42,7 @@ namespace Exiled.Events.Patches.Events.Player
             LocalBuilder ev = generator.DeclareLocal(typeof(ChangingRadioPresetEventArgs));
 
             const int offset = -5;
-            int index = newInstructions.FindLastIndex(instruction => instruction.opcode == OpCodes.Newobj) + offset;
+            int index = newInstructions.FindIndex(instruction => instruction.operand == (object)Constructor(typeof(PlayerChangingRadioRangeEventArgs), new[] { typeof(ReferenceHub), typeof(RadioItem), typeof(RadioMessages.RadioRangeLevel) })) + offset;
 
             newInstructions.InsertRange(
                 index,

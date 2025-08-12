@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="Reporting.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="Reporting.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -12,7 +12,6 @@ namespace Exiled.Events.Patches.Events.Server
 
     using API.Features.Pools;
     using Exiled.Events.Attributes;
-    using Exiled.Events.EventArgs.Player;
     using Exiled.Events.EventArgs.Server;
     using Exiled.Events.Handlers;
 
@@ -49,10 +48,10 @@ namespace Exiled.Events.Patches.Events.Server
                 index,
                 new[]
                 {
-                    // Player.Get(base.gameObject)
+                    // Player.Get(this._hub)
                     new CodeInstruction(OpCodes.Ldarg_0).MoveLabelsFrom(newInstructions[index]),
-                    new(OpCodes.Call, PropertyGetter(typeof(Component), nameof(Component.gameObject))),
-                    new(OpCodes.Call, Method(typeof(Player), nameof(Player.Get), new[] { typeof(GameObject) })),
+                    new(OpCodes.Ldfld, Field(typeof(CheaterReport), nameof(CheaterReport._hub))),
+                    new(OpCodes.Call, Method(typeof(Player), nameof(Player.Get), new[] { typeof(ReferenceHub) })),
 
                     // Player.Get(referenceHub)
                     new(OpCodes.Ldloc_2),
@@ -84,9 +83,9 @@ namespace Exiled.Events.Patches.Events.Server
                     new(OpCodes.Starg_S, 2),
                 });
 
-            offset = -2;
+            offset = 4;
             index = newInstructions.FindLastIndex(
-                instruction => instruction.StoresField(Field(typeof(CheaterReport), nameof(CheaterReport._lastReport)))) + offset;
+                instruction => instruction.operand == (object)"[REPORTING] Invalid report signature.") + offset;
 
             newInstructions.InsertRange(
                 index,

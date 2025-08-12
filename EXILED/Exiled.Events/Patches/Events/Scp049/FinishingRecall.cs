@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="FinishingRecall.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="FinishingRecall.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -34,8 +34,8 @@ namespace Exiled.Events.Patches.Events.Scp049
         {
             List<CodeInstruction> newInstructions = ListPool<CodeInstruction>.Pool.Get(instructions);
 
-            const int offset = -5;
-            int index = newInstructions.FindIndex(instruction => instruction.opcode == OpCodes.Newobj) + offset;
+            int offset = 1;
+            int index = newInstructions.FindIndex(instruction => instruction.opcode == OpCodes.Stloc_0) + offset;
 
             Label returnLabel = generator.DefineLabel();
 

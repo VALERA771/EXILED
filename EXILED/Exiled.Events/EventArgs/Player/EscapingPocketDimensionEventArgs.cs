@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="EscapingPocketDimensionEventArgs.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="EscapingPocketDimensionEventArgs.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -21,17 +21,26 @@ namespace Exiled.Events.EventArgs.Player
         /// <summary>
         /// Initializes a new instance of the <see cref="EscapingPocketDimensionEventArgs" /> class.
         /// </summary>
-        /// <param name="player">
+        /// <param name="pocketDimensionTeleport">
+        /// <inheritdoc cref="Teleporter" />
+        /// </param>
+        /// <param name="hub">
         /// <inheritdoc cref="Player" />
         /// </param>
         /// <param name="position">
         /// <inheritdoc cref="TeleportPosition" />
         /// </param>
-        public EscapingPocketDimensionEventArgs(Player player, Vector3 position)
+        public EscapingPocketDimensionEventArgs(PocketDimensionTeleport pocketDimensionTeleport, ReferenceHub hub, Vector3 position)
         {
-            Player = player;
+            Teleporter = pocketDimensionTeleport;
+            Player = Player.Get(hub);
             TeleportPosition = position;
         }
+
+        /// <summary>
+        /// Gets the PocketDimensionTeleport the player walked into.
+        /// </summary>
+        public PocketDimensionTeleport Teleporter { get; }
 
         /// <summary>
         /// Gets the player who's escaping the pocket dimension.
@@ -44,7 +53,7 @@ namespace Exiled.Events.EventArgs.Player
         public Vector3 TeleportPosition { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether or not the player can successfully escape the pocket dimension.
+        /// Gets or sets a value indicating whether the player can successfully escape the pocket dimension.
         /// </summary>
         public bool IsAllowed { get; set; } = true;
     }

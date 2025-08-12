@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="JailbirdPatch.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="JailbirdPatch.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -27,6 +27,7 @@ namespace Exiled.Events.Patches.Events.Item
     /// </summary>
     [EventPatch(typeof(Item), nameof(Item.Swinging))]
     [EventPatch(typeof(Item), nameof(Item.ChargingJailbird))]
+    [EventPatch(typeof(Item), nameof(Item.JailbirdChargeComplete))]
     [HarmonyPatch(typeof(JailbirdItem), nameof(JailbirdItem.ServerProcessCmd))]
     internal static class JailbirdPatch
     {
@@ -83,12 +84,30 @@ namespace Exiled.Events.Patches.Events.Item
                     return ev.IsAllowed;
                 }
 
-                case JailbirdMessageType.ChargeStarted:
+                case JailbirdMessageType.ChargeLoadTriggered:
                 {
                     ChargingJailbirdEventArgs ev = new(instance.Owner, instance);
 
                     Item.OnChargingJailbird(ev);
-                    return true;
+                    if (ev.IsAllowed)
+                        return true;
+
+                    ev.Player.RemoveHeldItem(destroy: false);
+                    ev.Player.CurrentItem = ev.Item;
+                    return false;
+                }
+
+                case JailbirdMessageType.ChargeStarted:
+                {
+                    JailbirdChargeCompleteEventArgs ev = new(instance.Owner, instance);
+
+                    Item.OnJailbirdChargeComplete(ev);
+                    if (ev.IsAllowed)
+                        return true;
+
+                    ev.Player.RemoveHeldItem(destroy: false);
+                    ev.Player.AddItem(ev.Item);
+                    return false;
                 }
 
                 default:

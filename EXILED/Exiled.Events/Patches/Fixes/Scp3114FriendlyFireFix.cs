@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="Scp3114FriendlyFireFix.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="Scp3114FriendlyFireFix.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -38,12 +38,12 @@ namespace Exiled.Events.Patches.Fixes
 
             Label cnt = generator.DefineLabel();
 
-            int offset = 0;
-            int index = newInstructions.FindIndex(x => x.LoadsField(Field(typeof(RoomLightController), nameof(RoomLightController.Instances)))) + offset;
+            int offset = 4;
+            int index = newInstructions.FindIndex(x => x.opcode == OpCodes.Ldsfld) + offset;
 
-            Label skip = newInstructions[index].labels[0];
+            Label skip = (Label)newInstructions[index].operand;
 
-            offset = -3;
+            offset = -4;
             index += offset;
 
             newInstructions.InsertRange(index, new[]
@@ -57,8 +57,6 @@ namespace Exiled.Events.Patches.Fixes
                 new(OpCodes.Ceq),
 
                 new(OpCodes.Brfalse_S, cnt),
-
-                new(OpCodes.Pop),
                 new(OpCodes.Br_S, skip),
 
                 new CodeInstruction(OpCodes.Nop).WithLabels(cnt),
@@ -93,6 +91,10 @@ namespace Exiled.Events.Patches.Fixes
         public override bool AllowSelfDamage { get; }
 
         public override float Damage { get; set; }
+
+        public override string RagdollInspectText { get; }
+
+        public override string DeathScreenText { get; }
 
         public override string ServerLogsText { get; }
 #pragma warning restore SA1600 // Elements should be documented

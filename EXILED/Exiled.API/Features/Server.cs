@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="Server.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="Server.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -10,6 +10,8 @@ namespace Exiled.API.Features
     using System;
     using System.Collections.Generic;
     using System.Reflection;
+
+    using Exiled.API.Enums;
 
     using GameCore;
 
@@ -58,11 +60,11 @@ namespace Exiled.API.Features
         /// </summary>
         public static string Name
         {
-            get => ServerConsole._serverName;
+            get => ServerConsole.ServerName;
             set
             {
-                ServerConsole._serverName = value;
-                ServerConsole.singleton.RefreshServerName();
+                ServerConsole.ServerName = value;
+                ServerConsole.Singleton.RefreshServerNameSafe();
             }
         }
 
@@ -72,12 +74,12 @@ namespace Exiled.API.Features
         public static string Version => GameCore.Version.VersionString;
 
         /// <summary>
-        /// Gets a value indicating whether or not streaming of this version is allowed.
+        /// Gets a value indicating whether streaming of this version is allowed.
         /// </summary>
         public static bool StreamingAllowed => GameCore.Version.StreamingAllowed;
 
         /// <summary>
-        /// Gets a value indicating whether or not this server is on a beta version of SCP:SL.
+        /// Gets a value indicating whether this server is on a beta version of SCP:SL.
         /// </summary>
         public static bool IsBeta => GameCore.Version.PublicBeta || GameCore.Version.PrivateBeta;
 
@@ -97,7 +99,7 @@ namespace Exiled.API.Features
         public static string IpAddress => ServerConsole.Ip;
 
         /// <summary>
-        /// Gets a value indicating whether or not this server is a dedicated server.
+        /// Gets a value indicating whether this server is a dedicated server.
         /// </summary>
         public static bool IsDedicated => ServerStatic.IsDedicated;
 
@@ -126,7 +128,7 @@ namespace Exiled.API.Features
         public static double Frametime => Math.Round(1f / Time.deltaTime);
 
         /// <summary>
-        /// Gets or sets a value indicating whether or not friendly fire is enabled.
+        /// Gets or sets a value indicating whether friendly fire is enabled.
         /// </summary>
         /// <seealso cref="Player.IsFriendlyFireEnabled"/>
         public static bool FriendlyFire
@@ -141,11 +143,8 @@ namespace Exiled.API.Features
             }
         }
 
-        /// <summary>
-        /// Gets the number of players currently on the server.
-        /// </summary>
-        /// <seealso cref="Player.List"/>
-        public static int PlayerCount => Player.Dictionary.Count;
+        /// <inheritdoc cref="Player.Count"/>
+        public static int PlayerCount => Player.Count;
 
         /// <summary>
         /// Gets or sets the maximum number of players able to be on the server.
@@ -157,7 +156,7 @@ namespace Exiled.API.Features
         }
 
         /// <summary>
-        /// Gets a value indicating whether or not late join is enabled.
+        /// Gets a value indicating whether late join is enabled.
         /// </summary>
         public static bool LateJoinEnabled => LateJoinTime > 0;
 
@@ -172,14 +171,27 @@ namespace Exiled.API.Features
         /// Read the VSR for more info about its usage.
         /// </remarks>
         /// </summary>
+        [Obsolete("This field has been deleted because it used the wrong field (TransparentlyModded)")]
         public static bool IsHeavilyModded
+        {
+            get => false;
+            set => _ = value;
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the server is marked as Transparently Modded.
+        /// <remarks>
+        /// It is not used now, wait for a new VSR update.
+        /// </remarks>
+        /// </summary>
+        public static bool IsTransparentlyModded
         {
             get => ServerConsole.TransparentlyModdedServerConfig;
             set => ServerConsole.TransparentlyModdedServerConfig = value;
         }
 
         /// <summary>
-        /// Gets or sets a value indicating whether or not this server has the whitelist enabled.
+        /// Gets or sets a value indicating whether this server has the whitelist enabled.
         /// </summary>
         public static bool IsWhitelisted
         {
@@ -193,12 +205,12 @@ namespace Exiled.API.Features
         public static HashSet<string> WhitelistedPlayers => WhiteList.Users;
 
         /// <summary>
-        /// Gets a value indicating whether or not this server is verified.
+        /// Gets a value indicating whether this server is verified.
         /// </summary>
         public static bool IsVerified => CustomNetworkManager.IsVerified;
 
         /// <summary>
-        /// Gets or sets a value indicating whether or not idle mode is enabled.
+        /// Gets or sets a value indicating whether idle mode is enabled.
         /// </summary>
         public static bool IsIdleModeEnabled
         {
@@ -222,6 +234,15 @@ namespace Exiled.API.Features
         /// </summary>
         /// <seealso cref="RestartRedirect(ushort)"/>
         public static void Restart() => Round.Restart(false, true, ServerStatic.NextRoundAction.Restart);
+
+        /// <summary>
+        /// Restarts the server with specified options.
+        /// </summary>
+        /// <param name="fastRestart">Indicates whether the restart should be fast.</param>
+        /// <param name="overrideRestartAction">Indicates whether to override the default restart action.</param>
+        /// <param name="restartAction">Specifies the action to perform after the restart.</param>
+        public static void Restart(bool fastRestart, bool overrideRestartAction = false, ServerStatic.NextRoundAction restartAction = ServerStatic.NextRoundAction.DoNothing) =>
+            Round.Restart(fastRestart, overrideRestartAction, restartAction);
 
         /// <summary>
         /// Shutdowns the server, disconnects all players.
@@ -252,6 +273,19 @@ namespace Exiled.API.Features
         }
 
         /// <summary>
+        /// Redirects players to a server on another port, restarts the current server.
+        /// </summary>
+        /// <param name="redirectPort">The port to redirect players to.</param>
+        /// <param name="fastRestart">Indicates whether the restart should be fast.</param>
+        /// <param name="overrideRestartAction">Indicates whether to override the default restart action.</param>
+        /// <param name="restartAction">Specifies the action to perform after the restart.</param>
+        public static void RestartRedirect(ushort redirectPort, bool fastRestart, bool overrideRestartAction = false, ServerStatic.NextRoundAction restartAction = ServerStatic.NextRoundAction.DoNothing)
+        {
+            NetworkServer.SendToAll(new RoundRestartMessage(RoundRestartType.RedirectRestart, 0.0f, redirectPort, true, false));
+            Timing.CallDelayed(0.5f, () => { Restart(fastRestart, overrideRestartAction, restartAction); });
+        }
+
+        /// <summary>
         /// Redirects players to a server on another port, shutdowns the current server.
         /// </summary>
         /// <param name="redirectPort">The port to redirect players to.</param>
@@ -266,12 +300,16 @@ namespace Exiled.API.Features
         }
 
         /// <summary>
-        /// Runs a server command.
+        /// Redirects players to a server on another port, shutdowns the current server.
         /// </summary>
-        /// <param name="command">The command to be run.</param>
-        /// <param name="sender">The <see cref="CommandSender"/> running the command.</param>
-        [Obsolete("Use Server.ExecuteCommand() instead.")]
-        public static void RunCommand(string command, CommandSender sender = null) => GameCore.Console.singleton.TypeCommand(command, sender);
+        /// <param name="redirectPort">The port to redirect players to.</param>
+        /// <param name="quit">Indicates whether to terminate the application after shutting down the server.</param>
+        /// <param name="suppressShutdownBroadcast">Indicates whether to suppress the broadcast notification about the shutdown.</param>
+        public static void ShutdownRedirect(ushort redirectPort, bool quit, bool suppressShutdownBroadcast = false)
+        {
+            NetworkServer.SendToAll(new RoundRestartMessage(RoundRestartType.RedirectRestart, 0.0f, redirectPort, true, false));
+            Timing.CallDelayed(0.5f, () => { Shutdown(quit, suppressShutdownBroadcast); });
+        }
 
         /// <summary>
         /// Executes a server command.

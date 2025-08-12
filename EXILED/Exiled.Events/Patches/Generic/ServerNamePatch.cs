@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="ServerNamePatch.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="ServerNamePatch.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -22,7 +22,7 @@ namespace Exiled.Events.Patches.Generic
             if (!Instance.Config.IsNameTrackingEnabled)
                 return;
 
-            ServerConsole._serverName += $"<color=#00000000><size=1>Exiled {Instance.Version.ToString(3)}</size></color>";
+            ServerConsole.ServerName += $"<color=#00000000><size=1>Exiled {Instance.Version.ToString(3)}</size></color>";
         }
     }
 }

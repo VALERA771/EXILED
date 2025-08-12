@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="DroppingItem.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="DroppingItem.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -107,7 +107,7 @@ namespace Exiled.Events.Patches.Events.Player
             });
 
             const int offset = 1;
-            int index = newInstructions.FindIndex(i => i.opcode == OpCodes.Stloc_1) + offset;
+            int index = newInstructions.FindIndex(i => i.opcode == OpCodes.Stloc_2) + offset;
 
             newInstructions.InsertRange(index, new CodeInstruction[]
             {
@@ -116,7 +116,7 @@ namespace Exiled.Events.Patches.Events.Player
                 new(OpCodes.Callvirt, PropertyGetter(typeof(DroppingItemEventArgs), nameof(DroppingItemEventArgs.Player))),
 
                 // ItemPickupBase
-                new(OpCodes.Ldloc_1),
+                new(OpCodes.Ldloc_2),
 
                 // ev.IsThrown
                 new(OpCodes.Ldloc_S, ev.LocalIndex),

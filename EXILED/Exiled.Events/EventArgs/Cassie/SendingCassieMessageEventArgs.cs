@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="SendingCassieMessageEventArgs.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="SendingCassieMessageEventArgs.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -26,12 +26,20 @@ namespace Exiled.Events.EventArgs.Cassie
         /// <param name="makeNoise">
         /// <inheritdoc cref="MakeNoise" />
         /// </param>
-        /// <param name="isAllowed">Indicates whether the event can be executed or not.</param>
-        public SendingCassieMessageEventArgs(string words, bool makeHold, bool makeNoise, bool isAllowed = true)
+        /// <param name="customAnnouncement">
+        /// <inheritdoc cref="IsCustomAnnouncement" />
+        /// </param>
+        /// <param name="customSubtitles">
+        /// <inheritdoc cref="CustomSubtitles" />
+        /// </param>
+        /// <param name="isAllowed">Indicates whether the event can be executed.</param>
+        public SendingCassieMessageEventArgs(string words, bool makeHold, bool makeNoise, bool customAnnouncement, string customSubtitles, bool isAllowed = true)
         {
             Words = words;
+            CustomSubtitles = customSubtitles;
             MakeHold = makeHold;
             MakeNoise = makeNoise;
+            IsCustomAnnouncement = customAnnouncement;
             IsAllowed = isAllowed;
         }
 
@@ -41,18 +49,28 @@ namespace Exiled.Events.EventArgs.Cassie
         public string Words { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether or not the message should be held.
+        /// Gets or sets the message subtitles.
+        /// </summary>
+        public string CustomSubtitles { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the message should be held.
         /// </summary>
         public bool MakeHold { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether or not the message should make noise.
+        /// Gets or sets a value indicating whether the message should make noise.
         /// </summary>
         public bool MakeNoise { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether or not the message can be sent.
+        /// Gets or sets a value indicating whether the message can be sent.
         /// </summary>
         public bool IsAllowed { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the message can be sent.
+        /// </summary>
+        public bool IsCustomAnnouncement { get; set; }
     }
 }

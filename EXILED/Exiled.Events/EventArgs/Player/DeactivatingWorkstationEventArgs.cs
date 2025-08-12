@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="DeactivatingWorkstationEventArgs.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="DeactivatingWorkstationEventArgs.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -31,7 +31,7 @@ namespace Exiled.Events.EventArgs.Player
         /// </param>
         public DeactivatingWorkstationEventArgs(WorkstationController controller, bool isAllowed = true)
         {
-            Player = Player.Get(controller._knownUser);
+            Player = Player.Get(controller.KnownUser);
             WorkstationController = controller;
             IsAllowed = isAllowed;
         }
@@ -52,7 +52,7 @@ namespace Exiled.Events.EventArgs.Player
         public WorkstationStatus NewStatus { get; set; } = WorkstationStatus.PoweringDown;
 
         /// <summary>
-        /// Gets or sets a value indicating whether or not the workstation can be deactivated.
+        /// Gets or sets a value indicating whether the workstation can be deactivated.
         /// </summary>
         public bool IsAllowed { get; set; }
     }

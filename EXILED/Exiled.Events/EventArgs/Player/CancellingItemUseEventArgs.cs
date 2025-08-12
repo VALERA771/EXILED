@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="CancellingItemUseEventArgs.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="CancellingItemUseEventArgs.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -20,13 +20,15 @@ namespace Exiled.Events.EventArgs.Player
         /// <summary>
         /// Initializes a new instance of the <see cref="CancellingItemUseEventArgs" /> class.
         /// </summary>
-        /// <param name="player">The player who's stopping the use of an item.</param>
+        /// <param name="hub">
+        /// <inheritdoc cref="Player" />
+        /// </param>
         /// <param name="item">
         /// <inheritdoc cref="UsedItemEventArgs.Item" />
         /// </param>
-        public CancellingItemUseEventArgs(Player player, UsableItem item)
+        public CancellingItemUseEventArgs(ReferenceHub hub, UsableItem item)
         {
-            Player = player;
+            Player = Player.Get(hub);
             Usable = Item.Get<Usable>(item);
         }
 
@@ -44,7 +46,7 @@ namespace Exiled.Events.EventArgs.Player
         public Player Player { get; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether or not the player can cancelling the use of item.
+        /// Gets or sets a value indicating whether the player can cancelling the use of item.
         /// </summary>
         public bool IsAllowed { get; set; } = true;
     }

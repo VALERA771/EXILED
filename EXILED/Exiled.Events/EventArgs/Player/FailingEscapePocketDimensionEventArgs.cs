@@ -1,12 +1,14 @@
 // -----------------------------------------------------------------------
-// <copyright file="FailingEscapePocketDimensionEventArgs.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="FailingEscapePocketDimensionEventArgs.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
 
 namespace Exiled.Events.EventArgs.Player
 {
+    using System;
+
     using API.Features;
 
     using Interfaces;
@@ -19,19 +21,19 @@ namespace Exiled.Events.EventArgs.Player
         /// <summary>
         /// Initializes a new instance of the <see cref="FailingEscapePocketDimensionEventArgs" /> class.
         /// </summary>
-        /// <param name="player">
-        /// <inheritdoc cref="Player" />
-        /// </param>
-        /// <param name="teleporter">
+        /// <param name="pocketDimensionTeleport">
         /// <inheritdoc cref="Teleporter" />
+        /// </param>
+        /// <param name="hub">
+        /// <inheritdoc cref="Player" />
         /// </param>
         /// <param name="isAllowed">
         /// <inheritdoc cref="IsAllowed" />
         /// </param>
-        public FailingEscapePocketDimensionEventArgs(Player player, PocketDimensionTeleport teleporter, bool isAllowed = true)
+        public FailingEscapePocketDimensionEventArgs(PocketDimensionTeleport pocketDimensionTeleport, ReferenceHub hub, bool isAllowed = true)
         {
-            Player = player;
-            Teleporter = teleporter;
+            Player = Player.Get(hub);
+            Teleporter = pocketDimensionTeleport;
             IsAllowed = isAllowed;
         }
 
@@ -41,7 +43,7 @@ namespace Exiled.Events.EventArgs.Player
         public PocketDimensionTeleport Teleporter { get; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether or not the player dies by failing the pocket dimension escape.
+        /// Gets or sets a value indicating whether the player dies by failing the pocket dimension escape.
         /// </summary>
         public bool IsAllowed { get; set; }
 

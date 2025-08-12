@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="Scp079.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="Scp079.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -58,6 +58,11 @@ namespace Exiled.Events.Handlers
         public static Event<ChangingSpeakerStatusEventArgs> ChangingSpeakerStatus { get; set; } = new();
 
         /// <summary>
+        /// Invoked before SCP-079 recontainment.
+        /// </summary>
+        public static Event<RecontainingEventArgs> Recontaining { get; set; } = new();
+
+        /// <summary>
         /// Invoked after SCP-079 recontainment.
         /// </summary>
         public static Event<RecontainedEventArgs> Recontained { get; set; } = new();
@@ -76,6 +81,16 @@ namespace Exiled.Events.Handlers
         /// Invoked before SCP-079 turns off the lights in a zone.
         /// </summary>
         public static Event<ZoneBlackoutEventArgs> ZoneBlackout { get; set; } = new();
+
+        /// <summary>
+        /// Invoked before SCP-079 loses a signal by SCP-2176.
+        /// </summary>
+        public static Event<LosingSignalEventArgs> LosingSignal { get; set; } = new();
+
+        /// <summary>
+        /// Invoked after SCP-079 loses a signal by SCP-2176.
+        /// </summary>
+        public static Event<LostSignalEventArgs> LostSignal { get; set; } = new();
 
         /// <summary>
         /// Called before SCP-079 switches cameras.
@@ -126,6 +141,12 @@ namespace Exiled.Events.Handlers
         public static void OnChangingSpeakerStatus(ChangingSpeakerStatusEventArgs ev) => ChangingSpeakerStatus.InvokeSafely(ev);
 
         /// <summary>
+        /// Called before SCP-079 is recontained.
+        /// </summary>
+        /// <param name="ev">The <see cref="RecontainingEventArgs" /> instance.</param>
+        public static void OnRecontaining(RecontainingEventArgs ev) => Recontaining.InvokeSafely(ev);
+
+        /// <summary>
         /// Called after SCP-079 is recontained.
         /// </summary>
         /// <param name="ev">The <see cref="RecontainedEventArgs" /> instance.</param>
@@ -148,5 +169,17 @@ namespace Exiled.Events.Handlers
         /// </summary>
         /// <param name="ev">The <see cref="PingingEventArgs" /> instance.</param>
         public static void OnZoneBlackout(ZoneBlackoutEventArgs ev) => ZoneBlackout.InvokeSafely(ev);
+
+        /// <summary>
+        /// Called before SCP-079 loses a signal by SCP-2176.
+        /// </summary>
+        /// <param name="ev">The <see cref="LosingSignalEventArgs" /> instance.</param>
+        public static void OnLosingSignal(LosingSignalEventArgs ev) => LosingSignal.InvokeSafely(ev);
+
+        /// <summary>
+        /// Called after SCP-079 loses a signal by SCP-2176.
+        /// </summary>
+        /// <param name="ev">The <see cref="LostSignalEventArgs" /> instance.</param>
+        public static void OnLostSignal(LostSignalEventArgs ev) => LostSignal.InvokeSafely(ev);
     }
 }

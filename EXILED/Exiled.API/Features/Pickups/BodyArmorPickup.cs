@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="BodyArmorPickup.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="BodyArmorPickup.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -66,13 +66,14 @@ namespace Exiled.API.Features.Pickups
         public bool Holsterable { get; } = false;
 
         /// <summary>
-        /// Gets a value indicating whether or not this is a worn item.
+        /// Gets a value indicating whether this is a worn item.
         /// </summary>
         public bool IsWorn { get; } = true;
 
         /// <summary>
-        /// Gets or sets a value indicating whether or not excess ammo should be removed when the armor is dropped.
+        /// Gets or sets a value indicating whether excess ammo should be removed when the armor is dropped.
         /// </summary>
+        [Obsolete("Propetry is internal, and controls armor remove logic for clearing inventory")]
         public bool RemoveExcessOnDrop { get; set; }
 
         /// <summary>
@@ -97,6 +98,11 @@ namespace Exiled.API.Features.Pickups
         /// Gets or sets how much faster stamina will drain when wearing this armor.
         /// </summary>
         public float StaminaUseMultiplier { get; set; }
+
+        /// <summary>
+        /// Gets or sets the stamina regen multiplier.
+        /// </summary>
+        public float StaminaRegenMultiplier { get; set; }
 
         /// <summary>
         /// Gets how much the users movement speed should be affected when wearing this armor. (higher values = slower movement).
@@ -127,8 +133,8 @@ namespace Exiled.API.Features.Pickups
             {
                 helmetEfficacy = armoritem.HelmetEfficacy;
                 vestEfficacy = armoritem.VestEfficacy;
-                RemoveExcessOnDrop = armoritem.RemoveExcessOnDrop;
                 StaminaUseMultiplier = armoritem.StaminaUseMultiplier;
+                StaminaRegenMultiplier = armoritem.StaminaRegenMultiplier;
                 AmmoLimits = armoritem.AmmoLimits;
                 CategoryLimits = armoritem.CategoryLimits;
             }
@@ -142,8 +148,8 @@ namespace Exiled.API.Features.Pickups
             {
                 helmetEfficacy = armoritem.HelmetEfficacy;
                 vestEfficacy = armoritem.VestEfficacy;
-                RemoveExcessOnDrop = !armoritem.DontRemoveExcessOnDrop;
                 StaminaUseMultiplier = armoritem._staminaUseMultiplier;
+                StaminaRegenMultiplier = armoritem.StaminaRegenMultiplier;
                 AmmoLimits = armoritem.AmmoLimits.Select(limit => (ArmorAmmoLimit)limit);
                 CategoryLimits = armoritem.CategoryLimits;
             }

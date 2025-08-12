@@ -1,21 +1,26 @@
 // -----------------------------------------------------------------------
-// <copyright file="InteractingScp330.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="InteractingScp330.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
 
 namespace Exiled.Events.Patches.Events.Scp330
 {
+    using InventorySystem.Items;
+
+#pragma warning disable SA1402
+#pragma warning disable SA1313
+
     using System.Collections.Generic;
     using System.Reflection.Emit;
 
     using Exiled.API.Features.Pools;
     using Exiled.Events.Attributes;
     using Exiled.Events.EventArgs.Scp330;
-    using Exiled.Events.Handlers;
     using HarmonyLib;
     using Interactables.Interobjects;
+    using InventorySystem;
     using InventorySystem.Items.Usables.Scp330;
 
     using static HarmonyLib.AccessTools;
@@ -24,9 +29,9 @@ namespace Exiled.Events.Patches.Events.Scp330
 
     /// <summary>
     /// Patches the <see cref="Scp330Interobject.ServerInteract(ReferenceHub, byte)" /> method to add the
-    /// <see cref="Scp330.InteractingScp330" /> event.
+    /// <see cref="Handlers.Scp330.InteractingScp330" /> event.
     /// </summary>
-    [EventPatch(typeof(Scp330), nameof(Scp330.InteractingScp330))]
+    [EventPatch(typeof(Handlers.Scp330), nameof(Handlers.Scp330.InteractingScp330))]
     [HarmonyPatch(typeof(Scp330Interobject), nameof(Scp330Interobject.ServerInteract))]
     public static class InteractingScp330
     {
@@ -34,39 +39,59 @@ namespace Exiled.Events.Patches.Events.Scp330
         {
             List<CodeInstruction> newInstructions = ListPool<CodeInstruction>.Pool.Get(instructions);
 
-            Label shouldNotSever = generator.DefineLabel();
             Label returnLabel = generator.DefineLabel();
-            Label enableEffectLabel = generator.DefineLabel();
 
             LocalBuilder ev = generator.DeclareLocal(typeof(InteractingScp330EventArgs));
 
             // Remove original "No scp can touch" logic.
             newInstructions.RemoveRange(0, 3);
 
-            // Find ServerProcessPickup, insert before it.
-            int offset = -3;
+            int offset = 2;
             int index = newInstructions.FindLastIndex(
-                instruction => instruction.Calls(Method(typeof(Scp330Bag), nameof(Scp330Bag.ServerProcessPickup)))) + offset;
+                instruction => instruction.Calls(Method(typeof(Scp330Candies), nameof(Scp330Candies.GetRandom)))) + offset;
 
             newInstructions.InsertRange(
                 index,
                 new[]
                 {
-                    // Player.Get(ply)
-                    new CodeInstruction(OpCodes.Ldarg_1).MoveLabelsFrom(newInstructions[index]),
-                    new(OpCodes.Call, Method(typeof(Player), nameof(Player.Get), new[] { typeof(ReferenceHub) })),
+                    // ply
+                    new CodeInstruction(OpCodes.Ldarg_1),
 
-                    // num2
+                    // usage
+                    new(OpCodes.Ldloc_1),
+
+                    // shouldPlaySound
                     new(OpCodes.Ldloc_2),
 
-                    // InteractingScp330EventArgs ev = new(Player, int)
+                    // shouldSever
+                    new(OpCodes.Ldloc_3),
+
+                    // candyKindID
+                    new(OpCodes.Ldloc_S, 4),
+
+                    // InteractingScp330EventArgs ev = new(ReferenceHub, int, bool, bool, CandyKindID)
                     new(OpCodes.Newobj, GetDeclaredConstructors(typeof(InteractingScp330EventArgs))[0]),
                     new(OpCodes.Dup),
                     new(OpCodes.Dup),
                     new(OpCodes.Stloc, ev.LocalIndex),
 
                     // Scp330.OnInteractingScp330(ev)
-                    new(OpCodes.Call, Method(typeof(Scp330), nameof(Scp330.OnInteractingScp330))),
+                    new(OpCodes.Call, Method(typeof(Handlers.Scp330), nameof(Handlers.Scp330.OnInteractingScp330))),
+                    new(OpCodes.Dup),
+                    new(OpCodes.Dup),
+                    new(OpCodes.Dup),
+
+                    // shouldPlaySound = ev.ShouldPlaySound
+                    new(OpCodes.Callvirt, PropertyGetter(typeof(InteractingScp330EventArgs), nameof(InteractingScp330EventArgs.ShouldPlaySound))),
+                    new(OpCodes.Stloc, 2),
+
+                    // shouldSever = ev.ShouldSever
+                    new(OpCodes.Callvirt, PropertyGetter(typeof(InteractingScp330EventArgs), nameof(InteractingScp330EventArgs.ShouldSever))),
+                    new(OpCodes.Stloc, 3),
+
+                    // candyKindID = ev.Candy
+                    new(OpCodes.Callvirt, PropertyGetter(typeof(InteractingScp330EventArgs), nameof(InteractingScp330EventArgs.Candy))),
+                    new(OpCodes.Stloc_S, 4),
 
                     // if (!ev.IsAllowed)
                     //    return;
@@ -74,35 +99,7 @@ namespace Exiled.Events.Patches.Events.Scp330
                     new(OpCodes.Brfalse, returnLabel),
                 });
 
-            // This is to find the location of RpcMakeSound to remove the original code and add a new sever logic structure (Start point)
-            int addShouldSeverOffset = -1;
-            int addShouldSeverIndex = newInstructions.FindLastIndex(
-                instruction => instruction.Calls(Method(typeof(Scp330Interobject), nameof(Scp330Interobject.RpcMakeSound)))) + addShouldSeverOffset;
-
-            int serverEffectLocationStart = -1;
-            int enableEffect = newInstructions.FindLastIndex(
-                instruction => instruction.LoadsField(Field(typeof(ReferenceHub), nameof(ReferenceHub.playerEffectsController)))) + serverEffectLocationStart;
-
-            newInstructions[enableEffect].WithLabels(enableEffectLabel);
-            newInstructions.InsertRange(
-                addShouldSeverIndex,
-                new[]
-                {
-                    // if (!ev.ShouldSever)
-                    //    goto shouldNotSever;
-                    new CodeInstruction(OpCodes.Ldloc, ev.LocalIndex),
-                    new(OpCodes.Callvirt, PropertyGetter(typeof(InteractingScp330EventArgs), nameof(InteractingScp330EventArgs.ShouldSever))),
-                    new(OpCodes.Brfalse, shouldNotSever),
-                    new(OpCodes.Br, enableEffectLabel),
-                });
-
-            // This will let us jump to the taken candies code and lock until ldarg_0, meaning we allow base game logic handle candy adding.
-            int addTakenCandiesOffset = -1;
-            int addTakenCandiesIndex = newInstructions.FindLastIndex(
-                instruction => instruction.LoadsField(Field(typeof(Scp330Interobject), nameof(Scp330Interobject._takenCandies)))) + addTakenCandiesOffset;
-
-            newInstructions[addTakenCandiesIndex].WithLabels(shouldNotSever);
-            newInstructions[newInstructions.Count - 1].WithLabels(returnLabel);
+            newInstructions[newInstructions.Count - 1].labels.Add(returnLabel);
 
             for (int z = 0; z < newInstructions.Count; z++)
                 yield return newInstructions[z];

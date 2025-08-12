@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="CustomRoles.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="CustomRoles.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -62,14 +62,22 @@ namespace Exiled.CustomRoles
 
             if (Config.UseKeypressActivation)
                 keypressActivator = new();
+
+            Exiled.Events.Handlers.Player.Spawned += playerHandlers.OnSpawned;
             Exiled.Events.Handlers.Player.SpawningRagdoll += playerHandlers.OnSpawningRagdoll;
+
+            Exiled.Events.Handlers.Server.WaitingForPlayers += playerHandlers.OnWaitingForPlayers;
             base.OnEnabled();
         }
 
         /// <inheritdoc/>
         public override void OnDisabled()
         {
+            Exiled.Events.Handlers.Player.Spawned -= playerHandlers!.OnSpawned;
             Exiled.Events.Handlers.Player.SpawningRagdoll -= playerHandlers!.OnSpawningRagdoll;
+
+            Exiled.Events.Handlers.Server.WaitingForPlayers -= playerHandlers!.OnWaitingForPlayers;
+
             keypressActivator = null;
             base.OnDisabled();
         }

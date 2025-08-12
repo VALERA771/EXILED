@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="Extensions.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="Extensions.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -39,6 +39,25 @@ namespace Exiled.CustomRoles.API
             }
 
             return roles.AsReadOnly();
+        }
+
+        /// <summary>
+        /// Checks whether the player has any custom role assigned.
+        /// </summary>
+        /// <param name="player">The <see cref="Player"/> to check.</param>
+        /// <returns><c>true</c> if the player has at least one custom role; otherwise, <c>false</c>.</returns>
+        public static bool HasAnyCustomRole(this Player player)
+        {
+            if (player == null)
+                return false;
+
+            foreach (CustomRole role in CustomRole.Registered)
+            {
+                if (role.Check(player))
+                    return true;
+            }
+
+            return false;
         }
 
         /// <summary>

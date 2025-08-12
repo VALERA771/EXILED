@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="TogglingRadio.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="TogglingRadio.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -12,17 +12,13 @@ namespace Exiled.Events.Patches.Events.Player
     using System.Reflection;
     using System.Reflection.Emit;
 
-    using Exiled.API.Features.Items;
     using Exiled.API.Features.Pools;
     using Exiled.Events.Attributes;
     using Exiled.Events.EventArgs.Player;
 
     using HarmonyLib;
 
-    using InventorySystem.Items;
     using InventorySystem.Items.Radio;
-
-    using PluginAPI.Events;
 
     using static HarmonyLib.AccessTools;
 
@@ -40,7 +36,7 @@ namespace Exiled.Events.Patches.Events.Player
 
             Label retLabel = generator.DefineLabel();
 
-            Predicate<CodeInstruction> match = instruction => instruction.opcode == OpCodes.Newobj && (ConstructorInfo)instruction.operand == GetDeclaredConstructors(typeof(PlayerRadioToggleEvent))[0];
+            Predicate<CodeInstruction> match = instruction => instruction.opcode == OpCodes.Newobj && (ConstructorInfo)instruction.operand == GetDeclaredConstructors(typeof(LabApi.Events.Arguments.PlayerEvents.PlayerTogglingRadioEventArgs))[0];
             int offset = -4;
             int index = newInstructions.FindIndex(match) + offset;
 

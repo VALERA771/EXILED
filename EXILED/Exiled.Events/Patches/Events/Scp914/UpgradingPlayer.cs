@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="UpgradingPlayer.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="UpgradingPlayer.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -8,6 +8,7 @@
 namespace Exiled.Events.Patches.Events.Scp914
 {
     using System.Collections.Generic;
+    using System.Reflection;
     using System.Reflection.Emit;
 
     using API.Features;
@@ -16,15 +17,17 @@ namespace Exiled.Events.Patches.Events.Scp914
     using Exiled.Events.EventArgs.Scp914;
     using global::Scp914;
     using HarmonyLib;
+    using Mono.Cecil.Cil;
     using PlayerRoles.FirstPersonControl;
     using UnityEngine;
 
     using static HarmonyLib.AccessTools;
 
+    using OpCode = System.Reflection.Emit.OpCode;
     using Scp914 = Handlers.Scp914;
 
     /// <summary>
-    /// Patches <see cref="Scp914Upgrader.ProcessPlayer(ReferenceHub, bool, bool, Vector3, Scp914KnobSetting)" />
+    /// Patches <see cref="Scp914Upgrader.ProcessPlayer" />
     /// to add the <see cref="Scp914.UpgradingPlayer" /> and <see cref="Scp914.UpgradingInventoryItem" /> event.
     /// </summary>
     [EventPatch(typeof(Scp914), nameof(Scp914.UpgradingPlayer))]
@@ -36,27 +39,20 @@ namespace Exiled.Events.Patches.Events.Scp914
         {
             List<CodeInstruction> newInstructions = ListPool<CodeInstruction>.Pool.Get(instructions);
 
-            // Find override position
-            const int offset = -3;
-            int index = newInstructions.FindIndex(instruction => instruction.Calls(Method(typeof(FpcExtensionMethods), nameof(FpcExtensionMethods.TryOverridePosition)))) + offset;
-
             Label returnLabel = generator.DefineLabel();
 
             LocalBuilder curSetting = generator.DeclareLocal(typeof(Scp914KnobSetting));
             LocalBuilder ev = generator.DeclareLocal(typeof(UpgradingPlayerEventArgs));
 
-            // Move labels from override - 3 position (Right after a branch)
-            List<Label> labels = newInstructions[index].labels;
-
-            // Remove TryOverride, and !upgradeInventory
-            newInstructions.RemoveRange(index, 5);
+            int offset = 1;
+            int index = newInstructions.FindIndex(instruction => instruction.opcode == OpCodes.Stloc_0) + offset;
 
             newInstructions.InsertRange(
                 index,
                 new[]
                 {
                     // Player.Get(ply)
-                    new CodeInstruction(OpCodes.Ldarg_0).WithLabels(labels),
+                    new CodeInstruction(OpCodes.Ldarg_0),
                     new(OpCodes.Call, Method(typeof(Player), nameof(Player.Get), new[] { typeof(ReferenceHub) })),
 
                     // upgradeInventory
@@ -66,10 +62,10 @@ namespace Exiled.Events.Patches.Events.Scp914
                     new(OpCodes.Ldarg_2),
 
                     // setting
-                    new(OpCodes.Ldarg_S, 4),
-
-                    // moveVector
                     new(OpCodes.Ldarg_3),
+
+                    // outputPosition
+                    new(OpCodes.Ldloc_0),
 
                     // UpgradingPlayerEventArgs ev = new(player, upgradeInventory, heldonly, setting, moveVector);
                     new(OpCodes.Newobj, GetDeclaredConstructors(typeof(UpgradingPlayerEventArgs))[0]),
@@ -89,6 +85,7 @@ namespace Exiled.Events.Patches.Events.Scp914
                     new(OpCodes.Ldloc_S, ev.LocalIndex),
                     new(OpCodes.Dup),
                     new(OpCodes.Dup),
+                    new(OpCodes.Dup),
 
                     // upgradeInventory = ev.UpgradeItems
                     new(OpCodes.Callvirt, PropertyGetter(typeof(UpgradingPlayerEventArgs), nameof(UpgradingPlayerEventArgs.UpgradeItems))),
@@ -100,50 +97,56 @@ namespace Exiled.Events.Patches.Events.Scp914
 
                     // setting = ev.KnobSetting
                     new(OpCodes.Callvirt, PropertyGetter(typeof(UpgradingPlayerEventArgs), nameof(UpgradingPlayerEventArgs.KnobSetting))),
-                    new(OpCodes.Starg_S, 4),
+                    new(OpCodes.Starg_S, 3),
+
+                    // outputPosition = ev.OutputPosition
+                    new(OpCodes.Callvirt, PropertyGetter(typeof(UpgradingPlayerEventArgs), nameof(UpgradingPlayerEventArgs.OutputPosition))),
+                    new(OpCodes.Stloc_0),
 
                     // curSetting = setting;
-                    new(OpCodes.Ldarg_S, 4),
+                    new(OpCodes.Ldarg_S, 3),
                     new(OpCodes.Stloc_S, curSetting.LocalIndex),
-
-                    // ev.Player.Teleport(ev.OutputPosition);
-                    new(OpCodes.Ldloc_S, ev.LocalIndex),
-                    new(OpCodes.Callvirt, PropertyGetter(typeof(UpgradingPlayerEventArgs), nameof(UpgradingPlayerEventArgs.Player))),
-                    new(OpCodes.Ldloc_S, ev.LocalIndex),
-                    new(OpCodes.Callvirt, PropertyGetter(typeof(UpgradingPlayerEventArgs), nameof(UpgradingPlayerEventArgs.OutputPosition))),
-                    new(OpCodes.Callvirt, Method(typeof(Player), nameof(Player.Teleport), new[] { typeof(Vector3) })),
                 });
 
-            // Find InventoryUpgrade, and set position there.
-            index = newInstructions.FindIndex(
-                instruction => instruction.LoadsField(Field(typeof(Scp914Upgrader), nameof(Scp914Upgrader.OnInventoryItemUpgraded))));
-
-            Label continueLabel = generator.DefineLabel();
-
-            // Find iterator jump by going -3 from leave_s
-            int continueIndex = newInstructions.FindIndex(index, instruction => instruction.opcode == OpCodes.Leave_S) - 3;
-
-            newInstructions[continueIndex].labels.Add(continueLabel);
+            offset = 1;
+            index = newInstructions.FindIndex(x => x.Calls(PropertyGetter(typeof(LabApi.Events.Arguments.Scp914Events.Scp914ProcessingInventoryItemEventArgs), nameof(LabApi.Events.Arguments.Scp914Events.Scp914ProcessingInventoryItemEventArgs.IsAllowed)))) + offset;
+            Label continueLabel = (Label)newInstructions[index].operand;
 
             LocalBuilder ev2 = generator.DeclareLocal(typeof(UpgradingInventoryItemEventArgs));
+            offset = 1;
 
+            // index = newInstructions.FindIndex(x => x.opcode == OpCodes.Stloc_S && x.operand is LocalBuilder { LocalIndex: 10 }) + offset;
+            ConstructorInfo lab_api_constructor = typeof(LabApi.Events.Arguments.Scp914Events.Scp914ProcessingInventoryItemEventArgs)
+                .GetConstructor(new[]
+                {
+                    typeof(InventorySystem.Items.ItemBase),
+                    typeof(Scp914KnobSetting),
+                    typeof(ReferenceHub),
+                });
+            index = newInstructions.FindIndex(x => x.Is(OpCodes.Newobj, lab_api_constructor)) + offset;
+
+            // ridtp lcz914
+            // noclip
+            // give tuxwonder7 47
             newInstructions.InsertRange(
                 index,
                 new CodeInstruction[]
                 {
                     // setting = curSetting
                     new(OpCodes.Ldloc_S, curSetting.LocalIndex),
-                    new(OpCodes.Starg_S, 4),
+                    new(OpCodes.Starg_S, 3),
 
                     // Player.Get(ply)
                     new(OpCodes.Ldarg_0),
                     new(OpCodes.Call, Method(typeof(Player), nameof(Player.Get), new[] { typeof(ReferenceHub) })),
 
                     // itemBase
-                    new(OpCodes.Ldloc_S, 8),
+                    new(OpCodes.Ldloc_S, 7),
 
                     // setting
-                    new(OpCodes.Ldarg_S, 4),
+                    new(OpCodes.Ldarg_S, 3),
+
+                    // true
                     new(OpCodes.Ldc_I4_1),
 
                     // UpgradingInventoryItemEventArgs ev = new(player, itemBase, setting)
@@ -163,7 +166,7 @@ namespace Exiled.Events.Patches.Events.Scp914
                     // setting = ev.KnobSetting
                     new(OpCodes.Ldloc_S, ev2.LocalIndex),
                     new(OpCodes.Callvirt, PropertyGetter(typeof(UpgradingInventoryItemEventArgs), nameof(UpgradingInventoryItemEventArgs.KnobSetting))),
-                    new(OpCodes.Starg_S, 4),
+                    new(OpCodes.Starg_S, 3),
                 });
 
             newInstructions[newInstructions.Count - 1].labels.Add(returnLabel);

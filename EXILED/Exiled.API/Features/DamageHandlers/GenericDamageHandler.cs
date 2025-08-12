@@ -1,23 +1,24 @@
 // -----------------------------------------------------------------------
-// <copyright file="GenericDamageHandler.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="GenericDamageHandler.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
 
 namespace Exiled.API.Features.DamageHandlers
 {
+    using System;
+
     using Enums;
 
     using Footprinting;
-
     using Items;
 
+    using PlayerRoles;
     using PlayerRoles.PlayableScps.Scp096;
     using PlayerRoles.PlayableScps.Scp939;
 
     using PlayerStatsSystem;
-
     using UnityEngine;
 
     /// <summary>
@@ -31,6 +32,7 @@ namespace Exiled.API.Features.DamageHandlers
         private Player player;
         private DamageType damageType;
         private DamageHandlerBase.CassieAnnouncement customCassieAnnouncement;
+        private bool overrideCassieForAllRole;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="GenericDamageHandler"/> class.
@@ -42,11 +44,13 @@ namespace Exiled.API.Features.DamageHandlers
         /// <param name="damageType"> Damage type. </param>
         /// <param name="cassieAnnouncement"> Custom cassie announcment. </param>
         /// <param name="damageText"> Text to provide to player death screen. </param>
-        public GenericDamageHandler(Player player, Player attacker, float damage, DamageType damageType, DamageHandlerBase.CassieAnnouncement cassieAnnouncement, string damageText = null)
+        /// <param name="overrideCassieForAllRole">Whether to play Cassie for non-SCPs as well.</param>
+        public GenericDamageHandler(Player player, Player attacker, float damage, DamageType damageType, DamageHandlerBase.CassieAnnouncement cassieAnnouncement, string damageText = null, bool overrideCassieForAllRole = false)
             : base(DamageTextDefault)
         {
             this.player = player;
             this.damageType = damageType;
+            this.overrideCassieForAllRole = overrideCassieForAllRole;
             cassieAnnouncement ??= DamageHandlerBase.CassieAnnouncement.Default;
             customCassieAnnouncement = cassieAnnouncement;
 
@@ -92,6 +96,9 @@ namespace Exiled.API.Features.DamageHandlers
                 case DamageType.SeveredHands:
                     Base = new UniversalDamageHandler(damage, DeathTranslations.SeveredHands, cassieAnnouncement);
                     break;
+                case DamageType.SeveredEyes:
+                    Base = new UniversalDamageHandler(damage, DeathTranslations.Scp1344, cassieAnnouncement);
+                    break;
                 case DamageType.Warhead:
                     Base = new WarheadDamageHandler();
                     break;
@@ -110,10 +117,10 @@ namespace Exiled.API.Features.DamageHandlers
                 case DamageType.MicroHid:
                     InventorySystem.Items.MicroHID.MicroHIDItem microHidOwner = new();
                     microHidOwner.Owner = attacker.ReferenceHub;
-                    Base = new MicroHidDamageHandler(microHidOwner, damage);
+                    Base = new MicroHidDamageHandler(damage, microHidOwner);
                     break;
                 case DamageType.Explosion:
-                    Base = new ExplosionDamageHandler(attacker.Footprint, UnityEngine.Vector3.zero, damage, 0);
+                    Base = new ExplosionDamageHandler(attacker.Footprint, UnityEngine.Vector3.zero, damage, 0, ExplosionType.Grenade);
                     break;
                 case DamageType.Firearm:
                     GenericFirearm(player, attacker, damage, damageType, ItemType.GunAK);
@@ -154,8 +161,11 @@ namespace Exiled.API.Features.DamageHandlers
                 case DamageType.A7:
                     GenericFirearm(player, attacker, damage, damageType, ItemType.GunA7);
                     break;
+                case DamageType.Scp127:
+                    GenericFirearm(player, attacker, damage, damageType, ItemType.GunSCP127);
+                    break;
                 case DamageType.ParticleDisruptor:
-                    Base = new DisruptorDamageHandler(Attacker, damage);
+                    Base = new DisruptorDamageHandler(new (Item.Create(ItemType.ParticleDisruptor, attacker).Base as InventorySystem.Items.Firearms.Firearm, InventorySystem.Items.Firearms.Modules.DisruptorActionModule.FiringState.FiringSingle), Vector3.up, damage);
                     break;
                 case DamageType.Scp096:
                     Scp096Role curr096 = attacker.ReferenceHub.roleManager.CurrentRole as Scp096Role ?? new Scp096Role();
@@ -203,6 +213,22 @@ namespace Exiled.API.Features.DamageHandlers
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="GenericDamageHandler"/> class.
+        /// Transform input data to custom generic handler.
+        /// </summary>
+        /// <param name="player"> Current player (Target). </param>
+        /// <param name="attacker"> Attacker. </param>
+        /// <param name="damage"> Damage quantity. </param>
+        /// <param name="damageType"> Damage type. </param>
+        /// <param name="cassieAnnouncement"> Custom cassie announcment. </param>
+        /// <param name="damageText"> Text to provide to player death screen. </param>
+        [Obsolete("This constructor will be deleted in Exiled 10")]
+        public GenericDamageHandler(Player player, Player attacker, float damage, DamageType damageType, DamageHandlerBase.CassieAnnouncement cassieAnnouncement, string damageText)
+            : this(player, attacker, damage, damageType, cassieAnnouncement, damageText, false)
+        {
+        }
+
+        /// <summary>
         /// Gets or sets a custom base.
         /// </summary>
         public PlayerStatsSystem.DamageHandlerBase Base { get; set; }
@@ -233,7 +259,7 @@ namespace Exiled.API.Features.DamageHandlers
             HandlerOutput output = base.ApplyDamage(ply);
             if (output is HandlerOutput.Death)
             {
-                if (customCassieAnnouncement?.Announcement != null)
+                if (customCassieAnnouncement?.Announcement != null && (overrideCassieForAllRole || ply.IsSCP()))
                 {
                     Cassie.Message(customCassieAnnouncement.Announcement);
                 }
@@ -259,7 +285,7 @@ namespace Exiled.API.Features.DamageHandlers
                     Owner = attacker.ReferenceHub,
                 },
             };
-            Base = new PlayerStatsSystem.FirearmDamageHandler(firearm.Base, amount);
+            Base = new PlayerStatsSystem.FirearmDamageHandler() { Firearm = firearm.Base, Damage = amount };
         }
     }
 }

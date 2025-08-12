@@ -1,6 +1,6 @@
-﻿// -----------------------------------------------------------------------
-// <copyright file="TemporaryHazard.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// -----------------------------------------------------------------------
+// <copyright file="TemporaryHazard.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -30,7 +30,7 @@ namespace Exiled.API.Features.Hazards
         public new BaseHazard Base { get; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether or not hazard is destroyed.
+        /// Gets or sets a value indicating whether hazard is destroyed.
         /// </summary>
         public bool IsDestroyed
         {
@@ -56,8 +56,8 @@ namespace Exiled.API.Features.Hazards
         /// </summary>
         public float Duration
         {
-            get => Base._elapsed;
-            set => Base._elapsed = value;
+            get => Base.Elapsed;
+            set => Base.Elapsed = value;
         }
 
         /// <summary>

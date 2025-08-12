@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="PickingUp330.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="PickingUp330.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -48,9 +48,8 @@ namespace Exiled.Events.Patches.Events.Player
                     new(OpCodes.Ldarg_1),
                     new(OpCodes.Brfalse, continueLabel),
 
-                    // Player.Get(ply)
+                    // ply
                     new(OpCodes.Ldarg_0),
-                    new(OpCodes.Call, Method(typeof(Player), nameof(Player.Get), new[] { typeof(ReferenceHub) })),
 
                     // pickup
                     new(OpCodes.Ldarg_1),
@@ -58,13 +57,13 @@ namespace Exiled.Events.Patches.Events.Player
                     // true
                     new(OpCodes.Ldc_I4_1),
 
-                    // PickingUpItemEventArgs ev = new(Player.Get(ply), pickup, true);
+                    // PickingUpItemEventArgs ev = new(ReferenceHub, pickup, true);
                     new(OpCodes.Newobj, GetDeclaredConstructors(typeof(PickingUpItemEventArgs))[0]),
                     new(OpCodes.Dup),
                     new(OpCodes.Dup),
                     new(OpCodes.Stloc, ev.LocalIndex),
 
-                    // Handlers.Scp330.OnPickingUpScp330(ev);
+                    // Handlers.Scp330.OnPickingUpItem(ev);
                     new(OpCodes.Call, Method(typeof(Handlers.Player), nameof(Handlers.Player.OnPickingUpItem))),
 
                     // if (!ev.IsAllowed)

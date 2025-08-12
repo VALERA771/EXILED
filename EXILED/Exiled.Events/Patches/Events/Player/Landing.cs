@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="Landing.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="Landing.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -43,7 +43,7 @@ namespace Exiled.Events.Patches.Events.Player
                 {
                     // Player.Get(base.OwnerHub)
                     new CodeInstruction(OpCodes.Ldarg_0).MoveLabelsFrom(newInstructions[index]),
-                    new(OpCodes.Call, PropertyGetter(typeof(CharacterModel), nameof(CharacterModel.OwnerHub))),
+                    new(OpCodes.Callvirt, PropertyGetter(typeof(CharacterModel), nameof(CharacterModel.OwnerHub))),
                     new(OpCodes.Call, Method(typeof(API.Features.Player), nameof(API.Features.Player.Get), new[] { typeof(ReferenceHub) })),
 
                     // LandingEventArgs ev = new(Player)

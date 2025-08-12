@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="ExplosionGrenadeProjectile.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="ExplosionGrenadeProjectile.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -49,8 +49,8 @@ namespace Exiled.API.Features.Pickups.Projectiles
         /// </summary>
         public float MaxRadius
         {
-            get => Base._maxRadius;
-            set => Base._maxRadius = value;
+            get => Base.MaxRadius;
+            set => Base.MaxRadius = value;
         }
 
         /// <summary>
@@ -94,8 +94,8 @@ namespace Exiled.API.Features.Pickups.Projectiles
         /// </summary>
         public float ScpDamageMultiplier
         {
-            get => Base._scpDamageMultiplier;
-            set => Base._scpDamageMultiplier = value;
+            get => Base.ScpDamageMultiplier;
+            set => Base.ScpDamageMultiplier = value;
         }
 
         /// <summary>

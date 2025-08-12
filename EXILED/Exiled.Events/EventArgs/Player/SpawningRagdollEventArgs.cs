@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="SpawningRagdollEventArgs.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="SpawningRagdollEventArgs.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -8,7 +8,6 @@
 namespace Exiled.Events.EventArgs.Player
 {
     using API.Features;
-
     using Interfaces;
 
     using PlayerRoles;
@@ -16,6 +15,7 @@ namespace Exiled.Events.EventArgs.Player
     using PlayerStatsSystem;
 
     using UnityEngine;
+    using YamlDotNet.Core.Tokens;
 
     /// <summary>
     /// Contains all information before spawning a player ragdoll.
@@ -45,7 +45,7 @@ namespace Exiled.Events.EventArgs.Player
         public Vector3 Position
         {
             get => Info.StartPosition;
-            set => Info = new RagdollData(Player.ReferenceHub, DamageHandlerBase, value, Rotation);
+            set => Info = new RagdollData(Player.ReferenceHub, DamageHandlerBase, Role, value, Rotation, Scale, Nickname, CreationTime);
         }
 
         /// <summary>
@@ -54,13 +54,22 @@ namespace Exiled.Events.EventArgs.Player
         public Quaternion Rotation
         {
             get => Info.StartRotation;
-            set => Info = new RagdollData(Player.ReferenceHub, DamageHandlerBase, Position, value);
+            set => Info = new RagdollData(Player.ReferenceHub, DamageHandlerBase, Role, Position, value, Scale, Nickname, CreationTime);
         }
 
         /// <summary>
-        /// Gets or sets the ragdoll's scale.
+        /// Gets or sets the ragdoll's scale with RagdollData.
         /// </summary>
-        public Vector3 Scale { get; set; }
+        public Vector3 Scale
+        {
+            get => Info.Scale;
+            set => Info = new RagdollData(Player.ReferenceHub, DamageHandlerBase, Role, Position, Rotation, Vector3.Scale(value, RagdollManager.GetDefaultScale(Role)), Nickname, CreationTime);
+        }
+
+        /// <summary>
+        /// Gets or sets the ragdoll's scale with GameObject.
+        /// </summary>
+        public Vector3 RagdollScale { get; set; } = Vector3.one;
 
         /// <summary>
         /// Gets or sets the ragdoll's <see cref="RoleTypeId" />.
@@ -68,7 +77,7 @@ namespace Exiled.Events.EventArgs.Player
         public RoleTypeId Role
         {
             get => Info.RoleType;
-            set => Info = new RagdollData(Player.ReferenceHub, DamageHandlerBase, value, Position, Rotation, Nickname, CreationTime);
+            set => Info = new RagdollData(Player.ReferenceHub, DamageHandlerBase, value, Position, Rotation, Scale, Nickname, CreationTime);
         }
 
         /// <summary>
@@ -82,7 +91,7 @@ namespace Exiled.Events.EventArgs.Player
         public string Nickname
         {
             get => Info.Nickname;
-            set => Info = new RagdollData(Player.ReferenceHub, DamageHandlerBase, Role, Position, Rotation, value, CreationTime);
+            set => Info = new RagdollData(Player.ReferenceHub, DamageHandlerBase, Role, Position, Rotation, Scale, value, CreationTime);
         }
 
         /// <summary>
@@ -96,11 +105,11 @@ namespace Exiled.Events.EventArgs.Player
         public DamageHandlerBase DamageHandlerBase
         {
             get => Info.Handler;
-            set => Info = new RagdollData(Player.ReferenceHub, value, Role, Position, Rotation, Nickname, CreationTime);
+            set => Info = new RagdollData(Player.ReferenceHub, value, Role, Position, Rotation, Scale, Nickname, CreationTime);
         }
 
         /// <summary>
-        /// Gets or sets a value indicating whether or not the ragdoll can be spawned.
+        /// Gets or sets a value indicating whether the ragdoll can be spawned.
         /// </summary>
         public bool IsAllowed { get; set; }
 

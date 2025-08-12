@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-// <copyright file="Camera.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="Camera.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -66,20 +66,14 @@ namespace Exiled.API.Features
             ["106 RECONTAINMENT"] = CameraType.Hcz106Recontainment,
             ["CHKPT (EZ)"] = CameraType.HczChkptEz,
             ["CHKPT (HCZ)"] = CameraType.HczChkptHcz,
-            ["H.I.D. CHAMBER"] = CameraType.HczHIDChamber,
-            ["H.I.D. HALLWAY"] = CameraType.HczHIDHallway,
             ["HCZ 939"] = CameraType.Hcz939,
             ["HCZ ARMORY"] = CameraType.HczArmory,
             ["HCZ ARMORY INTERIOR"] = CameraType.HczArmoryInterior,
             ["HCZ CROSSING"] = CameraType.HczCrossing,
-            ["HCZ CURVE"] = CameraType.HczCurve,
             ["HCZ ELEV SYS A"] = CameraType.HczElevSysA,
             ["HCZ ELEV SYS B"] = CameraType.HczElevSysB,
             ["HCZ HALLWAY"] = CameraType.HczHallway,
             ["HCZ THREE-WAY"] = CameraType.HczThreeWay,
-            ["SERVERS BOTTOM"] = CameraType.HczServersBottom,
-            ["SERVERS STAIRS"] = CameraType.HczServersStairs,
-            ["SERVERS TOP"] = CameraType.HczServersTop,
             ["TESLA GATE"] = CameraType.HczTeslaGate,
             ["TESTROOM BRIDGE"] = CameraType.HczTestroomBridge,
             ["TESTROOM MAIN"] = CameraType.HczTestroomMain,
@@ -124,6 +118,34 @@ namespace Exiled.API.Features
             ["SURFACE AIRLOCK"] = CameraType.SurfaceAirlock,
             ["SURFACE BRIDGE"] = CameraType.SurfaceBridge,
             ["TUNNEL ENTRANCE"] = CameraType.TunnelEntrance,
+
+            // new
+            ["HCZ CURVE"] = CameraType.HczCurve,
+            ["JUNK MAIN"] = CameraType.HczJunkMain,
+            ["JUNK HALLWAY"] = CameraType.HczJunkHallway,
+            ["CORNER DEEP"] = CameraType.HczCornerDeep,
+            ["DSS-08"] = CameraType.HczDSS08,
+            ["MICROHID STAIRS"] = CameraType.HczMicroHIDStairs,
+            ["PIPES HALLWAY"] = CameraType.HczPipesHallway,
+            ["PIPES MAIN"] = CameraType.HczPipesMain,
+            ["WARHEAD STARBOARD ELEVATOR"] = CameraType.HczWarheadStarboardElevator,
+            ["MICROHID MAIN"] = CameraType.HczMicroHIDMain,
+            ["MICROHID LAB"] = CameraType.HczMicroHIDLab,
+            ["WARHEAD TOP ELEVATORS"] = CameraType.HczWarheadTopElevators,
+            ["WARHEAD CONNECTOR"] = CameraType.HczWarheadConnector,
+            ["WARHEAD PORT ELEVATOR"] = CameraType.HczWarheadPortElevator,
+            ["HCZ SCP-127 LAB"] = CameraType.HczScp127Lab,
+            ["HCZ SCP-127 CONTAINMENT"] = CameraType.HczScp127Containment,
+            ["HCZ SERVERS UPPER STORAGE"] = CameraType.HczServersUpperStorage,
+            ["HCZ LOWER SERVER STORAGE"] = CameraType.HczLowerServerStorage,
+            ["HCZ SERVERS STAIRCASE"] = CameraType.HczServerStaircase,
+
+            // CustomCamera
+            ["EZ ARM CAMERA TOY"] = CameraType.EzArmCameraToy,
+            ["EZ CAMERA TOY"] = CameraType.EzCameraToy,
+            ["HCZ CAMERA TOY"] = CameraType.HczCameraToy,
+            ["LCZ CAMERA TOY"] = CameraType.LczCameraToy,
+            ["SZ CAMERA TOY"] = CameraType.SzCameraToy,
         };
 
         private Room room;
@@ -137,10 +159,8 @@ namespace Exiled.API.Features
             Base = camera079;
             Camera079ToCamera.Add(camera079, this);
             Type = GetCameraType();
-#if Debug
-            if (Type is CameraType.Unknown)
-                Log.Error($"[CAMERATYPE UNKNOWN] {this}");
-#endif
+            if (Base != null && Type is CameraType.Unknown)
+                Log.Error($"[CameraType] Room: {Room?.Type ?? RoomType.Unknown} Name:{Name}");
         }
 
         /// <summary>
@@ -204,8 +224,8 @@ namespace Exiled.API.Features
         /// </summary>
         public Quaternion Rotation
         {
-            get => Base._cameraAnchor.rotation;
-            set => Base._cameraAnchor.rotation = value;
+            get => Base.CameraAnchor.rotation;
+            set => Base.CameraAnchor.rotation = value;
         }
 
         /// <summary>
@@ -214,7 +234,7 @@ namespace Exiled.API.Features
         public float Zoom => Base.ZoomAxis.CurrentZoom;
 
         /// <summary>
-        /// Gets or sets a value indicating whether or not this camera is being used by SCP-079.
+        /// Gets or sets a value indicating whether this camera is being used by SCP-079.
         /// </summary>
         public bool IsBeingUsed
         {

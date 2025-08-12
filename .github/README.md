@@ -19,7 +19,7 @@
 </div>
 
 <p align="center">
-  <img alt="EXILED Development" src="https://repobeats.axiom.co/api/embed/28884ad6594de5dc7a7153c63389ec2759aeeb7d.svg">
+  <img alt="EXILED Development" src="https://repobeats.axiom.co/api/embed/19be90a4299eb2cfb0891a0c35774a120ed0f1ec.svg">
 </p>
 
 <h1 align="center">
@@ -90,7 +90,7 @@ Localized READMEs
   <div>
     <img src="https://flagsapi.com/DE/flat/64.png" height=30>
     <br>
-    <a href="documentation/localization/README-DE.md">German</a>
+    <a href="documentation/localization/README-DE.md">Deutsch</a>
   </div>
   <br>
   <div>

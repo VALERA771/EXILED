@@ -1,12 +1,14 @@
 // -----------------------------------------------------------------------
-// <copyright file="PlacingTantrumEventArgs.cs" company="Exiled Team">
-// Copyright (c) Exiled Team. All rights reserved.
+// <copyright file="PlacingTantrumEventArgs.cs" company="ExMod Team">
+// Copyright (c) ExMod Team. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
 
 namespace Exiled.Events.EventArgs.Scp173
 {
+    using System;
+
     using Exiled.API.Features;
     using Exiled.Events.EventArgs.Interfaces;
 
@@ -39,7 +41,9 @@ namespace Exiled.Events.EventArgs.Scp173
         {
             Player = player;
             Scp173 = Player.Role.As<Scp173Role>();
+#pragma warning disable CS0618
             TantrumHazard = tantrumHazard;
+#pragma warning restore CS0618
             Cooldown = cooldown;
             IsAllowed = isAllowed;
         }
@@ -52,6 +56,7 @@ namespace Exiled.Events.EventArgs.Scp173
         /// <summary>
         /// Gets the <see cref="TantrumEnvironmentalHazard" />.
         /// </summary>
+        [Obsolete("This propperty is always null")]
         public TantrumEnvironmentalHazard TantrumHazard { get; }
 
         /// <summary>
@@ -60,7 +65,7 @@ namespace Exiled.Events.EventArgs.Scp173
         public AbilityCooldown Cooldown { get; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether or not the tantrum can be placed.
+        /// Gets or sets a value indicating whether the tantrum can be placed.
         /// </summary>
         public bool IsAllowed { get; set; }
 
